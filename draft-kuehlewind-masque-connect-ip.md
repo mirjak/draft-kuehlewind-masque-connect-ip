@@ -122,11 +122,42 @@ proxy's external address will be relayed to the client.
 
 # The CONNECT-IP method {#connect-ip-method}
 
+This method defines a new HTTP/3 {{!I-D.ietf-quic-http}} method CONNECT-IP 
+to convert streams into tunnels to a forwarding 
+proxy. Each stream can be used separately to establish forwarding of one connection 
+to potentially different remote hosts. Other than the HTTP CONNECT method, CONNECT-IP 
+however does not request the forwarding proxy to establish an TCP connection to the remote 
+target host. Instead the the end-to-end tunnel payload will be forwarded right on top of the IP
+layer, meaning the forwarding proxy has to identify messages boundaries and then adds an IP
+header to the message before forwarding (see section {{proxy}}).
+
+This document specifies CONNECT-IP only for HTTP/3 following the same semantics as the
+CONNECT method. As such a CONNECT-IP request MUST be constructed as follows:
+
+*  The ":method" pseudo-header field is set to "CONNECT-IP"
+
+*  The ":scheme" and ":path" pseudo-header fields are omitted
+
+*  The ":authority" pseudo-header field contains the host and port to
+   connect to (equivalent to the authority-form of the request-target
+   of CONNECT requests; see Section 3.2.3 of {{!I-D.ietf-httpbis-messaging}})
+
+A CONNECT request that does not conform
+to these restrictions is malformed; see Section 4.1.3 of {{!I-D.ietf-quic-http}}.
+
+The forwarding stays active as long as the respective stream is open. Forwarding can be either
+realised by sending data on that stream together with an indication of message length or use of 
+HTTP/3 datagrams {{!I-D.schinazi-quic-h3-datagram}} where the payload of one frame is mapped
+to one message. Datagrams are mapped to a forwarding flow based on the Datagram-flow-ID
+that is carried in both the HTTP/3 datagram itself as well as in the Datagram-Flow-Id Header
+of the CONNECT-IP request itself as already defined in {{I-D.schinazi-masque-connect-udp}}.
+
+## Client Behavior {#client}
 
 
-## Client Behavior
 
-## Proxy Behavior
+## Proxy Behavior {#server}
+
 
 ## Examples
 
