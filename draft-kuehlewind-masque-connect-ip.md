@@ -62,26 +62,15 @@ This document specifies the CONNECT-IP method for IP
 MASQUE proposal over HTTP/3.
 
 ## Definitions
-
-  * UDP Flow: A sequence of UDP packets sharing a 5-tuple.
-  
-  * ECN: Explicit Congestion Notification {{RFC3168}}.
-  
-  * DSCP: Differentiated Service Code Point {{RFC2474}}.
   
   * Proxy: This document uses proxy as synonym for the MASQUE Server or an HTTP
     proxy, depending on context.
 
-  * Client: The endpoint initiating a MASQUE tunnel and UDP/IP relaying with the
+  * Client: The endpoint initiating a MASQUE tunnel and IP relaying with the
     proxy.
 
-  * Target: A remote endpoint the client wishes to establish bi-directional 
-    communication with. 
-    
-  * UDP proxying: A proxy forwarding data to a target over an UDP
-    "connection". Data is decapsulate at the proxy and amended by a UDP and IP
-    header before forwarding to the target. Datagram boundaries need to be
-    preserved or signalled between the client and proxy.
+  * Target host: A remote endpoint the client wishes to establish bi-directional 
+    communication with via tunnelling over the proxy. 
     
   * IP proxying: A proxy forwarding data to a target over an IP
     "connection". Data is decapsulate at the proxy and amended by a IP header
@@ -106,30 +95,27 @@ Address = IP address + UDP port
 {: #fig-node-model title="The nodes and their addresses"}
 
 {{fig-node-model}} provides an overview figure of the involved nodes,
-i.e. Client, Proxy, and Target, that are discussed below. We use the name target
-for the node or endpoint the client intends to communicate with via the proxy.
-There are also two network paths. Path #1 is the client to proxy path, where the
-MASQUE protocol will be used over an HTTP/3 session, usually over QUIC, to
-tunnel IP/UDP flow(s). Path #2 is the path between the Proxy and the Target.
+i.e. client, proxy, and target host. There are also two network paths. 
+Path #1 is the client to proxy path, where IP proxying is provided over 
+an HTTP/3 session, usually over QUIC, to tunnel IP flow(s). 
+Path #2 is the path between the proxy and the target.
 
 The client will use the proxy's service address to establish a transport
-connection on which to communicate with the proxy using the MASQUE protocol. The
-MASQUE protocol will be used to establish the relaying of a IP/UDP flow from the
-client using as the source address the proxy's external address and sending to
-the target address. In addition, after establishment, the reverse is also
-configured on the proxy; IP/UDP packets sent from the target address to the
-proxy's external address will be relayed to the client.
+connection on which to request IP proxying using HTTP/3 CONNECT-IP.
+The proxy will then relay the client's IP flows to the target host. 
+The IP header from the proxy to the target carries the proxy's external address
+as source address and the target's address as destination address. 
 
 # The CONNECT-IP method {#connect-ip-method}
 
-This method defines a new HTTP/3 {{!I-D.ietf-quic-http}} method CONNECT-IP 
+This document defines a new HTTP/3 {{!I-D.ietf-quic-http}} method CONNECT-IP 
 to convert streams into tunnels to a forwarding 
 proxy. Each stream can be used separately to establish forwarding of one connection 
 to potentially different remote hosts. Other than the HTTP CONNECT method, CONNECT-IP 
 however does not request the forwarding proxy to establish an TCP connection to the remote 
-target host. Instead the the end-to-end tunnel payload will be forwarded right on top of the IP
+target host. Instead the tunnel payload will be forwarded right on top of the IP
 layer, meaning the forwarding proxy has to identify messages boundaries and then adds an IP
-header to the message before forwarding (see section {{proxy}}).
+header to each message before forwarding (see section {{proxy}}).
 
 This document specifies CONNECT-IP only for HTTP/3 following the same semantics as the
 CONNECT method. As such a CONNECT-IP request MUST be constructed as follows:
@@ -146,15 +132,25 @@ A CONNECT request that does not conform
 to these restrictions is malformed; see Section 4.1.3 of {{!I-D.ietf-quic-http}}.
 
 The forwarding stays active as long as the respective stream is open. Forwarding can be either
-realised by sending data on that stream together with an indication of message length or use of 
+be realised by sending data on that stream together with an indication of message length or use of 
 HTTP/3 datagrams {{!I-D.schinazi-quic-h3-datagram}} where the payload of one frame is mapped
 to one message. Datagrams are mapped to a forwarding flow based on the Datagram-flow-ID
 that is carried in both the HTTP/3 datagram itself as well as in the Datagram-Flow-Id Header
-of the CONNECT-IP request itself as already defined in {{I-D.schinazi-masque-connect-udp}}.
+of the CONNECT-IP request as specified for CONNECT-UDP in {{I-D.schinazi-masque-connect-udp}}.
 
 ## Client Behavior {#client}
 
+To request IP proxying, a send a CONNECT-IP request to the forwarding proxy indicating the
+target host and port in the ":authority" pseudo-header field. Host portion is either an IP literal
+encapsulated within square brackets, an IPv4 address in dotted-decimal form, or a registered name.
+Different that for the TCP-based CONNECT, CONNECT-IP does not trigger a connection establishment process from the proxy to the target host. Therefore, the client does not need to
+wait for an HTTP response in order to send forwarding data.
 
+Forwarding data can either be send directly on the same HTTP stream as the CONNECT-IP request. In this case the Content-Length header is used to indicate the length of the first message of the forwarding data. An HTTP datagram encapsulated in a QUIC datagram can be send in the same
+QUIC packet. In this case the CONNECT-IP request MUST indicate the datagram flow ID in the
+Datagram-Flow-Id Header.
+
+TODO: how to know the length of follow up message on the same stream. And also note the different properties of streams and datagrams, e.g regarding ordering and reliability. Also discuss if both stream data and datagram data can be used with the same forwaridng request. Is that needed ? Is there a use case for that?
 
 ## Proxy Behavior {#server}
 
