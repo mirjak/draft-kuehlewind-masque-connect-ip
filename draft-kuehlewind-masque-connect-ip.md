@@ -18,7 +18,7 @@ author:
    name: Mirja Kuehlewind
    org: Ericsson
    email: mirja.kuehlewind@ericsson.com
-   
+
   -
     ins: M. Westerlund
     name: Magnus Westerlund
@@ -39,12 +39,17 @@ author:
 
 
 normative:
+    RFC0791:
     RFC2119:
     RFC8174:
+    RFC8200:
+    I-D.ietf-quic-http:
+    I-D.ietf-httpbis-messaging:
+    I-D.schinazi-quic-h3-datagram:
 
 informative:
     I-D.schinazi-masque-connect-udp:
-   
+
 --- abstract
 
 This draft specifies the CONNECT-IP method to proxy IP traffic. A client
@@ -62,16 +67,16 @@ This document specifies the CONNECT-IP method for IP {{RFC0791}} {{RFC8200}}
 flows when they are proxied according to the MASQUE proposal over HTTP/3.
 
 ## Definitions
-  
+
   * Proxy: This document uses proxy as synonym for the MASQUE Server or an HTTP
     proxy, depending on context.
 
   * Client: The endpoint initiating a MASQUE tunnel and IP relaying with the
     proxy.
 
-  * Target host: A remote endpoint the client wishes to establish bi-directional 
-    communication with via tunnelling over the proxy. 
-    
+  * Target host: A remote endpoint the client wishes to establish bi-directional
+    communication with via tunnelling over the proxy.
+
   * IP proxying: A proxy forwarding data to a target over an IP
     "connection". Data is decapsulate at the proxy and amended by a IP header
     before forwarding to the target. Packet boundaries need to be preserved or
@@ -87,9 +92,9 @@ Address = IP address + UDP port
 | Client |<--------->|  Proxy |<--------->| Target |
 |        |          ^|        |^          |        |
 +--------+         / +--------+ \         +--------+
-                  /              \     
-                 /                +-- Proxy's external address   
-                /                  
+                  /              \
+                 /                +-- Proxy's external address
+                /
                +-- Proxy's service address
 ~~~
 {: #fig-node-model title="The nodes and their addresses"}
@@ -106,6 +111,11 @@ will then relay the client's IP flows to the target host.  The IP header from
 the proxy to the target carries the proxy's external address as source address
 and the target's address as destination address.
 
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
+"SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this
+document are to be interpreted as described in BCP 14 {{RFC2119}} {{RFC8174}} when,
+and only when, they appear in all capitals, as shown here.
+
 # The CONNECT-IP method {#connect-ip-method}
 
 This document defines a new HTTP/3 {{!I-D.ietf-quic-http}} method CONNECT-IP to
@@ -115,7 +125,7 @@ remote hosts. Other than the HTTP CONNECT method, CONNECT-IP however does not
 request the forwarding proxy to establish an TCP connection to the remote target
 host. Instead the tunnel payload will be forwarded right on top of the IP layer,
 meaning the forwarding proxy has to identify messages boundaries and then adds
-an IP header to each message before forwarding (see section {{proxy}}).
+an IP header to each message before forwarding (see section {{server}}).
 
 This document specifies CONNECT-IP only for HTTP/3 following the same semantics
 as the CONNECT method. As such a CONNECT-IP request MUST be constructed as
