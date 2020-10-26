@@ -52,11 +52,15 @@ informative:
 
 --- abstract
 
-This draft specifies the CONNECT-IP method to proxy IP traffic. A client
-connects to a proxy server by initiating a HTTP/3 connection. The proxy server
-then forwards payload of one HTTP datagram flow to a target server by adding an
-IP header to each datagram received.
-
+This draft specifies ta new HTTP/3 methode CONNECT-IP to proxy IP traffic. 
+CONNECT-IP can be used to convert a QUIC stream into tunnels or intialize an HTTP
+datagram flow to a forwarding proxy. Each stream or HTTP datagram flow can be used
+separately to establish forwarding of a connection to potentially different
+remote hosts. To request forwarding, a client connects to a proxy server by
+initiating a HTTP/3 connection and sends a CONNECT-IP indicating the address of
+the traget server. The proxy server then forwards payload received on that
+stream or of an HTTP datagram flow with a certain flow ID to the target server by adding an
+IP header to each frame received.
 
 --- middle
 
