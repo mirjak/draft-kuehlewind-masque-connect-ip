@@ -68,7 +68,14 @@ IP header to each frame received.
 # Introduction
 
 This document specifies the CONNECT-IP method for IP {{RFC0791}} {{RFC8200}}
-flows when they are proxied according to the MASQUE proposal over HTTP/3.
+flows when they are proxied according to the MASQUE proposal over HTTP/3. 
+
+The approach in this paper does not send the IP header as part of the payload
+between the cleint and proxy in order to reduce overhead. The target IP address
+in provided by the client as part of th CONNCT-IP request. The sources address
+is selected by the proxy as further discussed below. Other information that might
+be needed to construct the IP or to inform the client based on received IP packets
+can be signaled separately.
 
 ## Definitions
 
@@ -157,28 +164,33 @@ CONNECT-UDP in {{I-D.schinazi-masque-connect-udp}}.
 
 ## Client Behavior {#client}
 
-To request IP proxying, a send a CONNECT-IP request to the forwarding proxy
+To request IP proxying, the client sends a CONNECT-IP request to the forwarding proxy
 indicating the target host and port in the ":authority" pseudo-header
-field. Host portion is either an IP literal encapsulated within square brackets,
-an IPv4 address in dotted-decimal form, or a registered name.  Different that
+field. The host portion is either an IP literal encapsulated within square brackets,
+an IPv4 address in dotted-decimal form, or a registered name.  Different than
 for the TCP-based CONNECT, CONNECT-IP does not trigger a connection
 establishment process from the proxy to the target host. Therefore, the client
 does not need to wait for an HTTP response in order to send forwarding data.
 
 Forwarding data can either be send directly on the same HTTP stream as the
 CONNECT-IP request. In this case the Content-Length header is used to indicate
-the length of the first message of the forwarding data. An HTTP datagram
-encapsulated in a QUIC datagram can be send in the same QUIC packet. In this
-case the CONNECT-IP request MUST indicate the datagram flow ID in the
+the length of the first message of the forwarding data. Or an HTTP datagram
+encapsulated in a QUIC datagram can be send in the same QUIC packet (see below).
+In this case the CONNECT-IP request MUST indicate the datagram flow ID in the
 Datagram-Flow-Id Header.
+
+### Datagram-based mode
 
 TODO: how to know the length of follow up message on the same stream. And also
 note the different properties of streams and datagrams, e.g regarding ordering
 and reliability. Also discuss if both stream data and datagram data can be used
 with the same forwaridng request. Is that needed ? Is there a use case for that?
 
+### Stream-based mode
+
 ## Proxy Behavior {#server}
 
+### IP address selection
 
 ## Examples
 
