@@ -71,11 +71,11 @@ This document specifies the CONNECT-IP method for IP {{RFC0791}} {{RFC8200}}
 flows when they are proxied according to the MASQUE proposal over HTTP/3. 
 
 The approach in this paper does not send the IP header as part of the payload
-between the cleint and proxy in order to reduce overhead. The target IP address
+between the client and proxy in order to reduce overhead. The target IP address
 in provided by the client as part of th CONNCT-IP request. The sources address
 is selected by the proxy as further discussed below. Other information that might
-be needed to construct the IP or to inform the client based on received IP packets
-can be signaled separately.
+be needed to construct the IP header or to inform the client about information
+from received IP packets can be signaled separately.
 
 ## Definitions
 
