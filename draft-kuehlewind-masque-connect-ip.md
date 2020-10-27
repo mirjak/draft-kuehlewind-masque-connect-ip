@@ -199,7 +199,7 @@ the client and proxy. Both the client and the masque server can send or request
 an JSON configuration file by sending an HTTP POST or GET to
 "/.well-known/masque/config". Further the masque server can PUSH status updates
 about certain forwarding streams or datagram flows, e.g. ECN counters, to
-"/.well-known/masque/<id>".
+"/.well-known/masque/\<id\>".
 
 ## Examples
 
