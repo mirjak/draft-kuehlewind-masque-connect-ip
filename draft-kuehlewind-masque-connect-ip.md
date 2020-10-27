@@ -188,6 +188,8 @@ with the same forwaridng request. Is that needed ? Is there a use case for that?
 
 ### Stream-based mode
 
+Use HTTP DATA frames as encapsulation to indicate length...
+
 ## Proxy Behavior {#server}
 
 ### IP address selection
