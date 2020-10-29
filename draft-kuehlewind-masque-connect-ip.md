@@ -155,14 +155,34 @@ Section 4.1.3 of {{!I-D.ietf-quic-http}}.
 
 The forwarding stays active as long as the respective stream is open. Forwarding
 can be either be realised by sending data on that stream together with an
-indication of message length or use of HTTP/3 datagrams
+indication of message length (see {{stream}}) or use of HTTP/3 datagrams
 {{!I-D.schinazi-quic-h3-datagram}} where the payload of one frame is mapped to
-one message. Datagrams are mapped to a forwarding flow based on the
-Datagram-flow-ID that is carried in both the HTTP/3 datagram itself as well as
-in the Datagram-Flow-Id Header of the CONNECT-IP request as specified for
-CONNECT-UDP in {{I-D.schinazi-masque-connect-udp}}.
+one message (see {{datagram}}). 
 
-## Client Behavior {#client}
+## ID Header for CONNECT-IP
+
+This document further defines a new header field to be used with CONNECT-IP "Conn-ID".
+The Conn-ID HTTP header field indicates the value, offset, and length of a field in the
+IP payload that can be used by the MASQUE as a connection identifier in addition to the 
+IP address tuple when multiple connections are proxied to the same target server.
+
+Conn-ID is a Item Structured Header {{!STRUCT-HDR=I-D.ietf-httpbis-header-structure}}. 
+Its value MUST be a Byte Sequence. Its ABNF is:
+
+~~~
+  Conn-ID = sf-binary
+~~~
+
+The following parameters are defined:
+* A parameter whose name is "offset", and whose value is an Integer indicating the offset of the identifier field starting from the beginning of a datagram or HTTP frame on the forwarding stream.
+* A parameter whose name is length, and whose value is an Integer indication the length of the identifier field starting from the offset.
+
+Both parameter MUST be present and the header MUST be ignored if these parameter are not present.
+
+This function can be used to e.g. indicate the source port field in the IP payload when containing an TCP packet.
+
+
+# Client Behavior {#client}
 
 To request IP proxying, the client sends a CONNECT-IP request to the forwarding proxy
 indicating the target host and port in the ":authority" pseudo-header
@@ -182,37 +202,47 @@ Datagram-Flow-Id Header.
 QUESTION: datagram flow ID are allocated by a flow id allocation service at the server in {{!I-D.schinazi-quic-h3-datagram}}. However, with CONNECT-IP you can always send your first message directly on the same stream right after the CONNECT-IP request and sever could provide you a flow ID together with a "2xx" response to the CONNECT-IP request. Wouldn't that be easier and faster?
 
 
-### Datagram-based mode
+## Datagram-based mode {#datagram}
+
+Datagrams are mapped to a forwarding flow based on the
+Datagram-flow-ID that is carried in both the HTTP/3 datagram itself as well as
+in the Datagram-Flow-Id Header of the CONNECT-IP request as specified for
+CONNECT-UDP in {{I-D.schinazi-masque-connect-udp}}.
 
 TODO: how to know the length of follow up message on the same stream. And also
 note the different properties of streams and datagrams, e.g regarding ordering
 and reliability. Also discuss if both stream data and datagram data can be used
 with the same forwaridng request. Is that needed ? Is there a use case for that?
 
-### Stream-based mode
+## Stream-based mode {#stream}
 
 Use HTTP DATA frames as encapsulation to indicate length...
 
-## Proxy Behavior {#server}
+# Proxy Behavior {#server}
 
-### IP address selection and NAT
+## IP address selection and NAT
 
 
 
-## MASQUE Signaling
+# MASQUE Signaling
 
 One stream of the underlying QUIC connection is used as a signalling channel between
 the client and proxy. Both the client and the masque server can send or request
 an JSON configuration file by sending an HTTP POST or GET to
 "/.well-known/masque/config". Further the masque server can PUSH status updates
-about certain forwarding streams or datagram flows, e.g. ECN counters, to
+about certain forwarding streams or datagram flows, e.g. contain ECN counters
+or the outside facing IP address used for this connection, to
 "/.well-known/masque/\<id\>".
 
-### ECN
+## ECN
 
-### ICMP Handling
+TBD
 
-## Examples
+## ICMP Handling
+
+TBD
+
+# Examples
 
 # Security Considerations
 
