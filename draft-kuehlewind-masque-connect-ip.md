@@ -13,12 +13,12 @@ pi: [toc, sortrefs, symrefs]
 
 
 author:
- -
+  -
    ins: M. Kuehlewind
    name: Mirja Kuehlewind
    org: Ericsson
    email: mirja.kuehlewind@ericsson.com
-   
+
   -
     ins: M. Westerlund
     name: Magnus Westerlund
@@ -39,39 +39,55 @@ author:
 
 
 normative:
-
+    RFC0791:
+    RFC2119:
+    RFC8174:
+    RFC8200:
+    I-D.ietf-quic-http:
+    I-D.ietf-httpbis-messaging:
+    I-D.schinazi-quic-h3-datagram:
 
 informative:
     I-D.schinazi-masque-connect-udp:
-   
+
 --- abstract
 
-This draft  specifies the CONNECT-IP method to proxy IP traffic. A client connects
-to a proxy server by initiating a HTTP/3 connection. The proxy server then forwards
-payload of one HTTP datagram flow to a target server by adding an IP header to
-each datagram received.
-
+This draft specifies a new HTTP/3 method CONNECT-IP to proxy IP traffic. 
+CONNECT-IP can be used to convert a QUIC stream into a tunnel or initialize  an HTTP
+datagram flow to a forwarding proxy. Each stream or HTTP datagram flow can be used
+separately to establish forwarding of a connection to potentially different
+remote hosts. To request forwarding, a client connects to a proxy server by
+initiating a HTTP/3 connection and sends a CONNECT-IP indicating the address of
+the target server. The proxy server then forwards payload received on that
+stream or in an HTTP datagram with a certain flow ID to the target server after adding an
+IP header to each frame received.
 
 --- middle
 
 
 # Introduction
 
-This document specifies the CONNECT-IP method for IP 
-{{RFC0791}} {{RFC8200}} flows when they are proxied according to the
-MASQUE proposal over HTTP/3.
+This document specifies the CONNECT-IP method for IP {{RFC0791}} {{RFC8200}}
+flows when they are proxied according to the MASQUE proposal over HTTP/3. 
+
+The approach in this paper does not send the IP header as part of the payload
+between the client and proxy in order to reduce overhead. The target IP address
+in provided by the client as part of th CONNCT-IP request. The sources address
+is selected by the proxy as further discussed below. Other information that might
+be needed to construct the IP header or to inform the client about information
+from received IP packets can be signaled separately.
 
 ## Definitions
-  
+
   * Proxy: This document uses proxy as synonym for the MASQUE Server or an HTTP
     proxy, depending on context.
 
   * Client: The endpoint initiating a MASQUE tunnel and IP relaying with the
     proxy.
 
-  * Target host: A remote endpoint the client wishes to establish bi-directional 
-    communication with via tunnelling over the proxy. 
-    
+  * Target host: A remote endpoint the client wishes to establish bi-directional
+    communication with via tunnelling over the proxy.
+
   * IP proxying: A proxy forwarding data to a target over an IP
     "connection". Data is decapsulate at the proxy and amended by a IP header
     before forwarding to the target. Packet boundaries need to be preserved or
@@ -87,38 +103,44 @@ Address = IP address + UDP port
 | Client |<--------->|  Proxy |<--------->| Target |
 |        |          ^|        |^          |        |
 +--------+         / +--------+ \         +--------+
-                  /              \     
-                 /                +-- Proxy's external address   
-                /                  
+                  /              \
+                 /                +-- Proxy's external address
+                /
                +-- Proxy's service address
 ~~~
 {: #fig-node-model title="The nodes and their addresses"}
 
 {{fig-node-model}} provides an overview figure of the involved nodes,
-i.e. client, proxy, and target host. There are also two network paths. 
-Path #1 is the client to proxy path, where IP proxying is provided over 
-an HTTP/3 session, usually over QUIC, to tunnel IP flow(s). 
-Path #2 is the path between the proxy and the target.
+i.e. client, proxy, and target host. There are also two network paths.  Path #1
+is the client to proxy path, where IP proxying is provided over an HTTP/3
+session, usually over QUIC, to tunnel IP flow(s).  Path #2 is the path between
+the proxy and the target.
 
 The client will use the proxy's service address to establish a transport
-connection on which to request IP proxying using HTTP/3 CONNECT-IP.
-The proxy will then relay the client's IP flows to the target host. 
-The IP header from the proxy to the target carries the proxy's external address
-as source address and the target's address as destination address. 
+connection on which to request IP proxying using HTTP/3 CONNECT-IP.  The proxy
+will then relay the client's IP flows to the target host.  The IP header from
+the proxy to the target carries the proxy's external address as source address
+and the target's address as destination address.
+
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
+"SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this
+document are to be interpreted as described in BCP 14 {{RFC2119}} {{RFC8174}} when,
+and only when, they appear in all capitals, as shown here.
 
 # The CONNECT-IP method {#connect-ip-method}
 
-This document defines a new HTTP/3 {{!I-D.ietf-quic-http}} method CONNECT-IP 
-to convert streams into tunnels to a forwarding 
-proxy. Each stream can be used separately to establish forwarding of one connection 
-to potentially different remote hosts. Other than the HTTP CONNECT method, CONNECT-IP 
-however does not request the forwarding proxy to establish an TCP connection to the remote 
-target host. Instead the tunnel payload will be forwarded right on top of the IP
-layer, meaning the forwarding proxy has to identify messages boundaries and then adds an IP
-header to each message before forwarding (see section {{proxy}}).
+This document defines a new HTTP/3 {{!I-D.ietf-quic-http}} method CONNECT-IP to
+convert streams into tunnels to a forwarding proxy. Each stream can be used
+separately to establish forwarding of one connection to potentially different
+remote hosts. Other than the HTTP CONNECT method, CONNECT-IP however does not
+request the forwarding proxy to establish an TCP connection to the remote target
+host. Instead the tunnel payload will be forwarded right on top of the IP layer,
+meaning the forwarding proxy has to identify messages boundaries and then adds
+an IP header to each message before forwarding (see section {{server}}).
 
-This document specifies CONNECT-IP only for HTTP/3 following the same semantics as the
-CONNECT method. As such a CONNECT-IP request MUST be constructed as follows:
+This document specifies CONNECT-IP only for HTTP/3 following the same semantics
+as the CONNECT method. As such a CONNECT-IP request MUST be constructed as
+follows:
 
 *  The ":method" pseudo-header field is set to "CONNECT-IP"
 
@@ -128,46 +150,67 @@ CONNECT method. As such a CONNECT-IP request MUST be constructed as follows:
    connect to (equivalent to the authority-form of the request-target
    of CONNECT requests; see Section 3.2.3 of {{!I-D.ietf-httpbis-messaging}})
 
-A CONNECT request that does not conform
-to these restrictions is malformed; see Section 4.1.3 of {{!I-D.ietf-quic-http}}.
+A CONNECT request that does not conform to these restrictions is malformed; see
+Section 4.1.3 of {{!I-D.ietf-quic-http}}.
 
-The forwarding stays active as long as the respective stream is open. Forwarding can be either
-be realised by sending data on that stream together with an indication of message length or use of 
-HTTP/3 datagrams {{!I-D.schinazi-quic-h3-datagram}} where the payload of one frame is mapped
-to one message. Datagrams are mapped to a forwarding flow based on the Datagram-flow-ID
-that is carried in both the HTTP/3 datagram itself as well as in the Datagram-Flow-Id Header
-of the CONNECT-IP request as specified for CONNECT-UDP in {{I-D.schinazi-masque-connect-udp}}.
+The forwarding stays active as long as the respective stream is open. Forwarding
+can be either be realised by sending data on that stream together with an
+indication of message length or use of HTTP/3 datagrams
+{{!I-D.schinazi-quic-h3-datagram}} where the payload of one frame is mapped to
+one message. Datagrams are mapped to a forwarding flow based on the
+Datagram-flow-ID that is carried in both the HTTP/3 datagram itself as well as
+in the Datagram-Flow-Id Header of the CONNECT-IP request as specified for
+CONNECT-UDP in {{I-D.schinazi-masque-connect-udp}}.
 
 ## Client Behavior {#client}
 
-To request IP proxying, a send a CONNECT-IP request to the forwarding proxy indicating the
-target host and port in the ":authority" pseudo-header field. Host portion is either an IP literal
-encapsulated within square brackets, an IPv4 address in dotted-decimal form, or a registered name.
-Different that for the TCP-based CONNECT, CONNECT-IP does not trigger a connection establishment process from the proxy to the target host. Therefore, the client does not need to
-wait for an HTTP response in order to send forwarding data.
+To request IP proxying, the client sends a CONNECT-IP request to the forwarding proxy
+indicating the target host and port in the ":authority" pseudo-header
+field. The host portion is either an IP literal encapsulated within square brackets,
+an IPv4 address in dotted-decimal form, or a registered name.  Different than
+for the TCP-based CONNECT, CONNECT-IP does not trigger a connection
+establishment process from the proxy to the target host. Therefore, the client
+does not need to wait for an HTTP response in order to send forwarding data.
 
-Forwarding data can either be send directly on the same HTTP stream as the CONNECT-IP request. In this case the Content-Length header is used to indicate the length of the first message of the forwarding data. An HTTP datagram encapsulated in a QUIC datagram can be send in the same
-QUIC packet. In this case the CONNECT-IP request MUST indicate the datagram flow ID in the
+Forwarding data can either be send directly on the same HTTP stream as the
+CONNECT-IP request. In this case the Content-Length header is used to indicate
+the length of the first message of the forwarding data. Or an HTTP datagram
+encapsulated in a QUIC datagram can be send in the same QUIC packet (see below).
+In this case the CONNECT-IP request MUST indicate the datagram flow ID in the
 Datagram-Flow-Id Header.
 
 QUESTION: datagram flow ID are allocated by a flow id allocation service at the server in {{!I-D.schinazi-quic-h3-datagram}}. However, with CONNECT-IP you can always send your first message directly on the same stream right after the CONNECT-IP request and sever could provide you a flow ID together with a "2xx" response to the CONNECT-IP request. Wouldn't that be easier and faster?
 
-TODO: how to know the length of follow up message on the same stream. And also note the different properties of streams and datagrams, e.g regarding ordering and reliability. Also discuss if both stream data and datagram data can be used with the same forwaridng request. Is that needed ? Is there a use case for that?
+
+### Datagram-based mode
+
+TODO: how to know the length of follow up message on the same stream. And also
+note the different properties of streams and datagrams, e.g regarding ordering
+and reliability. Also discuss if both stream data and datagram data can be used
+with the same forwaridng request. Is that needed ? Is there a use case for that?
+
+### Stream-based mode
+
+Use HTTP DATA frames as encapsulation to indicate length...
 
 ## Proxy Behavior {#server}
 
-TODO: Mechanism to provide external IP to client
+### IP address selection and NAT
 
-### NAT
 
-IPv6 use one IP address per connection?
 
-IPv4 multiplex based on <source, destination> tuple
+## MASQUE Signaling
+
+One stream of the underlying QUIC connection is used as a signalling channel between
+the client and proxy. Both the client and the masque server can send or request
+an JSON configuration file by sending an HTTP POST or GET to
+"/.well-known/masque/config". Further the masque server can PUSH status updates
+about certain forwarding streams or datagram flows, e.g. ECN counters, to
+"/.well-known/masque/\<id\>".
 
 ### ECN
 
 ### ICMP Handling
-
 
 ## Examples
 

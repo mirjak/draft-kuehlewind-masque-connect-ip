@@ -1,0 +1,7 @@
+<note title="Discussion Venues" removeInRFC="true">
+<t>Discussion of this document takes place on the
+  MASQUE Working Group mailing list (masque@ietf.org),
+  which is archived at <eref target="https://mailarchive.ietf.org/arch/browse/masque/"/>.</t>
+<t>Source for this draft and an issue tracker can be found at
+  <eref target="https://github.com/mirjak/draft-kuehlewind-masque-connect-ip"/>.</t>
+</note>
