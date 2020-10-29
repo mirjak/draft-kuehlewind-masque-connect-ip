@@ -150,9 +150,23 @@ Forwarding data can either be send directly on the same HTTP stream as the CONNE
 QUIC packet. In this case the CONNECT-IP request MUST indicate the datagram flow ID in the
 Datagram-Flow-Id Header.
 
+QUESTION: datagram flow ID are allocated by a flow id allocation service at the server in {{!I-D.schinazi-quic-h3-datagram}}. However, with CONNECT-IP you can always send your first message directly on the same stream right after the CONNECT-IP request and sever could provide you a flow ID together with a "2xx" response to the CONNECT-IP request. Wouldn't that be easier and faster?
+
 TODO: how to know the length of follow up message on the same stream. And also note the different properties of streams and datagrams, e.g regarding ordering and reliability. Also discuss if both stream data and datagram data can be used with the same forwaridng request. Is that needed ? Is there a use case for that?
 
 ## Proxy Behavior {#server}
+
+TODO: Mechanism to provide external IP to client
+
+### NAT
+
+IPv6 use one IP address per connection?
+
+IPv4 multiplex based on <source, destination> tuple
+
+### ECN
+
+### ICMP Handling
 
 
 ## Examples
