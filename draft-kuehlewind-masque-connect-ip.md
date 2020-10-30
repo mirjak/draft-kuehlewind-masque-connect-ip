@@ -348,10 +348,10 @@ TBD
 
 # Security considerations
 
-This document does currently not discuss risk that are generic to the MASQUE approach.
+This document does currently not discuss risks that are generic to the MASQUE approach.
 
-Any CONNECT-IP specific risk need further consideration in further, especially when the 
-handling of IP functions is further defined. 
+Any CONNECT-IP specific risks need further consideration in future, especially when the 
+handling of IP functions is defined in more detail. 
 
 # IANA considerations {#iana}
 
