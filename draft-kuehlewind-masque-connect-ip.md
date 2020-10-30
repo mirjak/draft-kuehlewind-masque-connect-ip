@@ -276,13 +276,13 @@ the client does not need to wait for an HTTP response in order to send
 forwarding data.
 
 Forwarding data can either be send directly on the same HTTP stream as the
-CONNECT-IP request. In this case the Content-Length header is used to indicate
-the length of the first message of the forwarding data. Or an HTTP datagram
-encapsulated in a QUIC datagram can be send in the same QUIC packet (see below).
-In this case the CONNECT-IP request MUST indicate the datagram flow ID in the
+CONNECT-IP request (see Section {{stream}}), or an HTTP datagram
+encapsulated in a QUIC datagram can be send(see Section {{datagram}}),
+even in the same QUIC packet. To request use of the datagram mode,
+the CONNECT-IP request MUST indicate the datagram flow ID in the
 Datagram-Flow-Id Header.
 
-QUESTION: datagram flow ID are allocated by a flow id allocation service at the
+QUESTION: datagram flow IDs are allocated by a flow id allocation service at the
 server in {{!I-D.schinazi-quic-h3-datagram}}. However, with CONNECT-IP you can
 always send your first message directly on the same stream right after the
 CONNECT-IP request and sever could provide you a flow ID together with a "2xx"
