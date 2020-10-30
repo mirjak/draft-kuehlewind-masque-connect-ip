@@ -118,19 +118,19 @@ the MASQUE server to ensure that return traffic can be received by the client.
 
 ## Definitions
 
-  * Proxy: This document uses proxy as synonym for the MASQUE Server or an HTTP
-    proxy, depending on context.
+  * Proxy: This document uses proxy as synonym for the MASQUE Server
+    or an HTTP proxy, depending on context.
 
-  * Client: The endpoint initiating a MASQUE tunnel and IP relaying with the
-    proxy.
+  * Client: The endpoint initiating a MASQUE tunnel and IP relaying
+    with the proxy.
 
-  * Target host: A remote endpoint the client wishes to establish bi-directional
-    communication with via tunnelling over the proxy.
+  * Target host: A remote endpoint the client wishes to establish
+    bi-directional communication with via tunnelling over the proxy.
 
-  * IP proxying: A proxy forwarding data to a target over an IP
-    "connection". Data is decapsulate at the proxy and amended by a IP header
-    before forwarding to the target. Packet boundaries need to be preserved or
-    signalled between the client and proxy.
+  * IP proxying: A proxy forwarding IP payloads to a target for an IP
+    flow. Data is decapsulate at the proxy and amended by a IP header
+    before forwarding to the target. Packet boundaries need to be
+    preserved or signalled between the client and proxy.
 
   * IP flow: A flow of IP packets between two hosts as identified by
     their IP addresses, and where all the packets share some
