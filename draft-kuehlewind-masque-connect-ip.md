@@ -63,7 +63,7 @@ informative:
 This draft specifies a new HTTP/3 method CONNECT-IP to proxy IP traffic.
 CONNECT-IP can be used to convert a QUIC stream into a tunnel or initialise an
 HTTP datagram flow to a forwarding proxy. Each stream or HTTP datagram flow can
-be used separately to establish forwarding of a connection to potentially
+be used separately to establish forwarding of an IP flow to potentially
 different remote hosts. To request forwarding, a client connects to a proxy
 server by initiating a HTTP/3 connection and sends a CONNECT-IP indicating the
 address of the target server. The proxy server then forwards payload received on
@@ -75,29 +75,46 @@ after adding an IP header to each frame received.
 
 # Introduction
 
-This document specifies the CONNECT-IP method for IP {{RFC0791}} {{RFC8200}}
-flows when they are proxied according to the MASQUE proposal over HTTP/3.
+This document specifies the CONNECT-IP method for IPv4 {{RFC0791}} and IPv6
+{{RFC8200}} flows when they are proxied according to the MASQUE proposal over
+HTTP/3.
 
-The approach taken in this paper does not send the IP header as part of the payload
-between the client and proxy in order to reduce overhead. The target IP address
-in provided by the client as part of the CONNCT-IP request. The sources address
-is selected by the proxy as further discussed below. Other information that might
-be needed to construct the IP header or to inform the client about information
-from received IP packets can be signalled separately.
+The approach taken in this paper does not send the IP header as part of the
+payload between the client and proxy in order to reduce overhead. The target IP
+address and other IP flow related information is provided by the client as part
+of the CONNCT-IP request. The sources address is selected by the proxy as
+further discussed below. Other information that might be needed to construct the
+IP header or to inform the client about information from received IP packets can
+be signalled separately.
 
 This proposal is based on the analysis provided in
 {{?I-D.westerlund-masque-transport-issues}} indicating that most information in
-the IP header can or even should be provided by the proxy as the IP
-communication endpoint without input needed from the client. The only
-information identified that require client interaction are ECN {{RFC3168}} and
-ICMP {{RFC0792}} {{RFC4443}} handling. This document proposes an event-based
+the IP header is either IP flow related or can or even should be provided by the
+proxy as the IP communication endpoint without input needed from the client. The
+only information identified that require client interaction are ECN {{RFC3168}}
+and ICMP {{RFC0792}} {{RFC4443}} handling. This document proposes an event-based
 handling for both, which may not provide unambiguous mapping to one specific IP
-packet that triggered the event but trades this off for lower overhead.  DCSP
-{{RFC2474}} handling is considered as mainly used for local signalling and as
-such the proxy can handle it independently of any client input. However, as use
-of DSCP could be extended in future, the signal mechanism in MASQUE must be
-flexible enough to accommodate this or other future use cases based on
-potentially new IPv6 extension header or destination header options {{RFC8200}}.
+packet that triggered the event but trades this off for lower overhead.
+
+This document uses an IP flow definition that is tigher than just source and
+destination address of the IP packet. To reduce the overhead a number of IP
+header field values that are static in the context of an upper layer protocol,
+like UDP or TCP are associated with the Masque IP flow creation. These fields
+include the Protocol (IPv4) / Next Header (IPv6), IPv6 flow label, Diffserv Code
+Point (DSCP), TTL / Hop Limit. Where default value or locally generated values
+based on the Connect-IP context is often sufficient, signalling of other desired
+values may be desired in certain deployments. DCSP {{RFC2474}} is a challenge
+due to local domain dependency of the used DSCP values and what forwarding
+behavior and priority they represent. This indicates to at least ensure that
+there are room for future extensions for these cases or other future use cases
+based on potentially new IPv6 extension header or destination header options
+{{RFC8200}}.
+
+So CONNECT-IP method establish an outgoing IP flow, from the MASQUE server's
+external address to the by client specified target address. The method also
+enable reception and relaying of the reverse IP flow from the target address to
+the MASQUE server to ensure that return traffic can be received by the client.
+
 
 ## Definitions
 
@@ -114,6 +131,11 @@ potentially new IPv6 extension header or destination header options {{RFC8200}}.
     "connection". Data is decapsulate at the proxy and amended by a IP header
     before forwarding to the target. Packet boundaries need to be preserved or
     signalled between the client and proxy.
+
+  * IP flow: A flow of IP packets between two hosts as identified by
+    their IP addresses, and where all the packets share some
+    properties. These properties include protocol / next header field,
+    flow label (IPv6 only), and DSCP per direction.
 
 ~~~
 Address = IP address
@@ -146,8 +168,40 @@ and the target's address as destination address.
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this
-document are to be interpreted as described in BCP 14 {{RFC2119}} {{RFC8174}} when,
-and only when, they appear in all capitals, as shown here.
+document are to be interpreted as described in BCP 14 {{RFC2119}} {{RFC8174}}
+when, and only when, they appear in all capitals, as shown here.
+
+## Motivation of IP flow model
+
+The chose IP flow model is selected due to several advantages:
+
+  * Shared functionality with CONNECT-UDP: The UDP flow proxying functionality
+    of CONNECT-UDP will need to establish, store and process the same IP header
+    related fields and state. So this can be accomplished by simply removing the
+    UDP specific processing of packets.
+
+  * CONNECT-IP can establish a new IP flow in 0-RTT: No network releated
+    latencies in establishing new flow.
+
+  * Minimized per packet overhead: The per packet overhead is reduced to basic
+    framing of the IP payload for each IP packet and flow identifiers.
+
+
+Disadvantages of this model are the following:
+
+  * Client server focused solution: Accepting non-solicited traffic is
+    challenging and require MASQUE server to client signalling.
+
+
+Discussion: This IP flow model appears less sutiable if one targets network
+proxying or running server functionality on the client side. However, as has
+been identified this functionalit will be required if one intend to support
+CONNECT-UDP. Thus, a potential long term solution is to have these as two
+different modes for how CONNECT-IP operates. If this other mode is tunneling the
+complete IP header over the MASQUE connection, then other properties are
+achieved.  It will also put other requirements on the MASQUE server related to
+IP router functionality, source address validation, and possibly network adderss
+translation.
 
 # The CONNECT-IP method {#connect-ip-method}
 
@@ -221,7 +275,7 @@ application.
 
 ## IP-Protocol Header for CONNECT-IP
 
-In order to construct the IP header the MASQUE server need to fill the "Protocol" field 
+In order to construct the IP header the MASQUE server need to fill the "Protocol" field
 in the IPv4 header or "Next header" field in the IPv6 header. As the IP payload is otherwise
 mostly opaque to the MASQUE forwarding server, this information has to be provided by
 the client for each CONNECT-IP request. Therefore this document define a new header
@@ -336,10 +390,10 @@ the same IP address is used for multiple clients, this can still lead to an
 identifier collision and the IP-CONNECT request MUST be reject if such a
 collision is detect.
 
-## Constructing the IP header {#IP-packet}
+## Constructing the IP header {#IP-header}
 
 To retrieve the source and destination address the proxy looks up the
-datagram flow ID or stream identifier. The IP version, flow 
+datagram flow ID or stream identifier. The IP version, flow
 label, DiffServ codepoint (DSCP), and hop limit/TTL is selected by the proxy.
 The IPv4 Protocol or IPv6 Next Header field is set based on the information
 provided by the IP-Protocol header in the CONNECT-IP request.
@@ -356,7 +410,7 @@ Further ECN handling is described in Section {{ECN}}.
 ## Receiving an IP packet {#receiving}
 
 When the MASQUE proxy receives an incoming IP packet, it checks if the source
-and destination IP maps to an active forwarding connection. If one or more 
+and destination IP maps to an active forwarding connection. If one or more
 mappings exists, it further checks if this mapping contains additional
 identifier information and if these map as well. If no active mapping is found,
 the IP packet is discarded.
@@ -411,7 +465,7 @@ case validation can either be done by the proxy independently or the proxy has
 to provide not only the number or received observed CE markings but also the
 number of sent and other received markings. This need further discussion.
 
-## ICMP handling {#ICMP} 
+## ICMP handling {#ICMP}
 
 TBD
 
