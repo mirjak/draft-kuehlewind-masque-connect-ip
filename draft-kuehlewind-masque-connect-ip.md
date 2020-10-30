@@ -342,23 +342,27 @@ TBD (indicate IP address handling, forwarding mode preference, ...)
 
 ## ECN
 
-ECN requires coordination with the e2e communication points as it should only be used
-if the endpoints are also capable and willing to signal congestion notifications to the other 
-end and react accordingly if a congestion notification is received. In addition, the proxy needs
-to inform the client of a congestion notification (IP CE codepoint) was observed in any IP header
-of a received packet from the target server. This can be realised that maintaining an CE counter
-and send an updated JSON stream file if the counter changes.
+ECN requires coordination with the e2e communication points as it should only be
+used if the endpoints are also capable and willing to signal congestion
+notifications to the other end and react accordingly if a congestion
+notification is received. In addition, the proxy needs to inform the client of a
+congestion notification (IP CE codepoint) was observed in any IP header of a
+received packet from the target server. This can be realised that maintaining an
+CE counter and send an updated JSON stream file if the counter changes.
 
-Further, client must indicate to the proxy for each forwarding flow/stream if the 
-ECT(0) or ECT(1) codepoint should be set. The client can update this during the lifetime
-of a forwarding connection, however, there is no guarantee which packet will be forwarded 
-with the updated information or the old information as QUIC datagrams may be delivered out of
-order. If the IP payload is e.g. carrying TCP, today, ECN is only used after the handshake. But if not all
-data packets after the handshake are immediately ECT marked, this should not have a huge impact.
+Further, client must indicate to the proxy for each forwarding flow/stream if
+the ECT(0) or ECT(1) codepoint should be set. The client can update this during
+the lifetime of a forwarding connection, however, there is no guarantee which
+packet will be forwarded with the updated information or the old information as
+QUIC datagrams may be delivered out of order. If the IP payload is e.g. carrying
+TCP, today, ECN is only used after the handshake. But if not all data packets
+after the handshake are immediately ECT marked, this should not have a huge
+impact.
 
-It may be needed for the endpoint to validate ECN usage on the path. In this case validation can either
-be done by the proxy independently or the proxy has to provide not only the number or received observed 
-CE markings but also the number of sent and other received markings. This need further discussion.
+It may be needed for the endpoint to validate ECN usage on the path. In this
+case validation can either be done by the proxy independently or the proxy has
+to provide not only the number or received observed CE markings but also the
+number of sent and other received markings. This need further discussion.
 
 ## ICMP handling
 
