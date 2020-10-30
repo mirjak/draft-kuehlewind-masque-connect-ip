@@ -90,30 +90,47 @@ be signalled separately.
 This proposal is based on the analysis provided in
 {{?I-D.westerlund-masque-transport-issues}} indicating that most information in
 the IP header is either IP flow related or can or even should be provided by the
-proxy as the IP communication endpoint without input needed from the client. The
-only information identified that require client interaction are ECN {{RFC3168}}
+proxy as the IP communication endpoint without the need for input from the client. The
+only information identified that requires client interaction is ECN {{RFC3168}}
 and ICMP {{RFC0792}} {{RFC4443}} handling. This document proposes an event-based
 handling for both, which may not provide unambiguous mapping to one specific IP
 packet that triggered the event but trades this off for lower overhead.
 
-This document uses an IP flow definition that is tigher than just source and
+This document uses an IP flow definition that is tighter than just source and
 destination address of the IP packet. To reduce the overhead a number of IP
-header field values that are static in the context of an upper layer protocol,
-like UDP or TCP are associated with the Masque IP flow creation. These fields
+header field values that are static in the context of an upper layer protocol
+connection, e.g. when UDP or TCP are used, are associated with an MASQUE
+IP flow at creation. These fields
 include the Protocol (IPv4) / Next Header (IPv6), IPv6 flow label, Diffserv Code
-Point (DSCP), TTL / Hop Limit. Where default value or locally generated values
-based on the Connect-IP context is often sufficient, signalling of other desired
-values may be desired in certain deployments. DCSP {{RFC2474}} is a challenge
-due to local domain dependency of the used DSCP values and what forwarding
-behavior and priority they represent. This indicates to at least ensure that
-there are room for future extensions for these cases or other future use cases
-based on potentially new IPv6 extension header or destination header options
-{{RFC8200}}.
+Point (DSCP), TTL / Hop Limit, where a default value or locally generated value
+based on the CONNECT-IP context is sufficient. Signalling of other dedicated
+values may be desired in certain deployments, e.g for DCSP {{RFC2474}}.
+However, DSCP is in any case a challenge
+due to local domain dependency of the used DSCP values and the forwarding
+behavior and traffic treatment they represent. To address potential future DSCP use
+cases or other future use cases that may require additional signalling e.g. based
+on potentially new IPv6 extension headers or destination header options {{RFC8200}}
+it must be ensured that there is room for future extensions in the signalling proposed. 
 
-So CONNECT-IP method establish an outgoing IP flow, from the MASQUE server's
-external address to the by client specified target address. The method also
+The CONNECT-IP method establishes an outgoing IP flow, from the MASQUE server's
+external address to the target server's address specified by the client. The method also
 enable reception and relaying of the reverse IP flow from the target address to
 the MASQUE server to ensure that return traffic can be received by the client.
+This specification does support forwarding on incoming traffic to one of the 
+clients that have an active QUIC tunnel connection with the proxy if no
+active mapping have previously been created based on an IP-CONNECT request.
+
+Following the points above, this document assume that usually one upper-layer end-to-end connection
+is associated to one CONNECT-IP request/one tunnelling association. While it would be
+possible for a client to use the same tunnelling association for multiple 
+end-to-end connections to the same target server, as long as they all require the same
+Protocol (IPv4) / Next Header (IPv6) value, this would lead to the use of the same flow
+ID for all connections and complicate the use of ECN as feedback cannot be associated
+with a single packet/connection. As such this is not recommended for connection-oriented 
+transmissions. Alternatively, the proposed approach in this document could be extended
+to support per-packet signalling in HTTP datagrams and DATA frames on streams to
+address this restriction, however, this would increase per-packet overhead and design
+decisions in this document where taken in order minimise byte overhead.
 
 
 ## Definitions
@@ -134,8 +151,9 @@ the MASQUE server to ensure that return traffic can be received by the client.
 
   * IP flow: A flow of IP packets between two hosts as identified by
     their IP addresses, and where all the packets share some
-    properties. These properties include protocol / next header field,
-    flow label (IPv6 only), and DSCP per direction.
+    properties. These properties include source/destination address,
+    protocol / next header field, flow label (IPv6 only), and DSCP
+    per direction.
 
 ~~~
 Address = IP address
