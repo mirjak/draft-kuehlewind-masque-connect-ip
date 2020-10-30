@@ -53,6 +53,9 @@ normative:
     I-D.ietf-httpbis-header-structure:
 
 informative:
+   RFC0792:
+   RFC2474:
+   RFC4443:
 
 
 --- abstract
@@ -81,6 +84,20 @@ in provided by the client as part of the CONNCT-IP request. The sources address
 is selected by the proxy as further discussed below. Other information that might
 be needed to construct the IP header or to inform the client about information
 from received IP packets can be signalled separately.
+
+This proposal is based on the analysis provided in
+{{?I-D.westerlund-masque-transport-issues}} indicating that most information in
+the IP header can or even should be provided by the proxy as the IP
+communication endpoint without input needed from the client. The only
+information identified that require client interaction are ECN {{RFC3168}} and
+ICMP {{RFC0792}} {{RFC4443}} handling. This document proposes an event-based
+handling for both, which may not provide unambiguous mapping to one specific IP
+packet that triggered the event but trades this off for lower overhead.  DCSP
+{{RFC2474}} handling is considered as mainly used for local signalling and as
+such the proxy can handle it independently of any client input. However, as use
+of DSCP could be extended in future, the signal mechanism in MASQUE must be
+flexible enough to accommodate this or other future use cases based on
+potentially new IPv6 extension header or destination header options {{RFC8200}}.
 
 ## Definitions
 
@@ -325,7 +342,23 @@ TBD (indicate IP address handling, forwarding mode preference, ...)
 
 ## ECN
 
-TBD
+ECN requires coordination with the e2e communication points as it should only be used
+if the endpoints are also capable and willing to signal congestion notifications to the other 
+end and react accordingly if a congestion notification is received. In addition, the proxy needs
+to inform the client of a congestion notification (IP CE codepoint) was observed in any IP header
+of a received packet from the target server. This can be realised that maintaining an CE counter
+and send an updated JSON stream file if the counter changes.
+
+Further, client must indicate to the proxy for each forwarding flow/stream if the 
+ECT(0) or ECT(1) codepoint should be set. The client can update this during the lifetime
+of a forwarding connection, however, there is no guarantee which packet will be forwarded 
+with the updated information or the old information as QUIC datagrams may be delivered out of
+order. If the IP payload is e.g. carrying TCP, today, ECN is only used after the handshake. But if not all
+data packets after the handshake are immediately ECT marked, this should not have a huge impact.
+
+It may be needed for the endpoint to validate ECN usage on the path. In this case validation can either
+be done by the proxy independently or the proxy has to provide not only the number or received observed 
+CE markings but also the number of sent and other received markings. This need further discussion.
 
 ## ICMP handling
 
@@ -333,12 +366,14 @@ TBD
 
 # Examples
 
+TBD
+
 # Security considerations
 
-This document does currently not discuss risk that are generic to the MASQUE approach.
+This document does currently not discuss risks that are generic to the MASQUE approach.
 
-Any CONNECT-IP specific risk need further consideration in further, especially
-when the handling of IP functions is further defined.
+Any CONNECT-IP specific risks need further consideration in future, especially
+when the handling of IP functions is defined in more detail.
 
 # IANA considerations {#iana}
 
