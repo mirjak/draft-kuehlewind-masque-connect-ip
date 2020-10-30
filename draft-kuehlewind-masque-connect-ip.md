@@ -212,6 +212,28 @@ Datagram mode provides un-order and unreliable delivery. In theory both, stream
 as well as datagram mode, can be used in parallel, however, for most
 transmission is is expected to only use one.
 
+While IP packet send in stream based mode, only have to respect the end-to-end MTU
+between the client and the target server, packet send in datagram mode are further
+restricted by the QUIC packet size of the QUIC tunnel and any overhead within
+the QUIC packet. The proxy should provide MTU and overhead information to client.
+The Client MUST take this overhead into account when indicating the MTU to the
+application.
+
+## IP-Protocol Header for CONNECT-IP
+
+In order to construct the IP header the MASQUE server need to fill the "Protocol" field 
+in the IPv4 header or "Next header" field in the IPv6 header. As the IP payload is otherwise
+mostly opaque to the MASQUE forwarding server, this information has to be provided by
+the client for each CONNECT-IP request. Therefore this document define a new header
+field that is mandatory to use with CONNECT-IP called "IP-Protocol".
+
+IP-Protocool is a Item Structured Header {{!I-D.ietf-httpbis-header-structure}}.
+Its value MUST be a Byte Sequence. Its ABNF is:
+
+~~~
+  IP-Protocol = sf-binary
+~~~
+
 ## Conn-ID Header for CONNECT-IP
 
 This document further defines a new header field to be used with CONNECT-IP
@@ -220,9 +242,8 @@ length of a field in the IP payload that can be used by the MASQUE as a
 connection identifier in addition to the IP address tuple when multiple
 connections are proxied to the same target server.
 
-Conn-ID is a Item Structured Header
-{{!I-D.ietf-httpbis-header-structure}}.  Its value MUST be a Byte
-Sequence. Its ABNF is:
+Conn-ID is a Item Structured Header {{!I-D.ietf-httpbis-header-structure}}.
+Its value MUST be a Byte Sequence. Its ABNF is:
 
 ~~~
   Conn-ID = sf-binary
@@ -279,15 +300,11 @@ the Datagram-Flow-Id Header from the client's request on the HTTP response.
 
 All DATA frames received on that stream as well as all HTPP/s datagrams with the
 specified Datagram-flow-ID are forwarded to the target server by adding an IP
-header and sending the packet on the respective raw socket.
+header (see section {{IP-header}} below) and sending the packet on the respective raw socket.
 
-IP packets received from the target server must be mapped to an active
-forwarding connection and it payload is then respectively forwarded in an DATA
-frame or HTTP datagram to the client. The masque server should use the same
-forwarding mode as used by the client.  If both modes, datagram and stream
-based, are used, it is recommended to the same mode as most recently used by the
-client or datagram mode as default. Alternatively, the client might indicate a
-preference in the configuration file.
+IP packets received from the target server are mapped to an active
+forwarding connection and its payload is then respectively forwarded in an DATA
+frame or HTTP datagram to the client (see section {{receiving}} below).
 
 ## Error handling
 
@@ -310,7 +327,7 @@ same client when multiple connection to one target server are needed. This can
 be problematic if the source address is used by the target server as an
 identifier.
 
-If the Conn-D header is provided the MASQUE server should use that field as an
+If the Conn-ID header is provided the MASQUE server should use that field as an
 connection identifier together with source and destination address, as a
 3-tuple. In this case it is recommended to use a stable IP address for each
 client, while the same IP address might still be used for multiple clients, if
@@ -319,6 +336,36 @@ the same IP address is used for multiple clients, this can still lead to an
 identifier collision and the IP-CONNECT request MUST be reject if such a
 collision is detect.
 
+## Constructing the IP header {#IP-packet}
+
+To retrieve the source and destination address the proxy looks up the
+datagram flow ID or stream identifier. The IP version, flow 
+label, DiffServ codepoint (DSCP), and hop limit/TTL is selected by the proxy.
+The IPv4 Protocol or IPv6 Next Header field is set based on the information
+provided by the IP-Protocol header in the CONNECT-IP request.
+
+MASQUE server MUST set the DF flag in the IPv4 header. Payload
+that does not fit into one IP packet must be dropped. An dropping
+indication should be provided to the client. Further the MASQUE
+server should provide MTU information.
+
+The ECN field is by default set to non-ECN capable transport (non-ECT).
+Further ECN handling is described in Section {{ECN}}.
+
+
+## Receiving an IP packet {#receiving}
+
+When the MASQUE proxy receives an incoming IP packet, it checks if the source
+and destination IP maps to an active forwarding connection. If one or more 
+mappings exists, it further checks if this mapping contains additional
+identifier information and if these map as well. If no active mapping is found,
+the IP packet is discarded.
+
+The masque server should use the same
+forwarding mode as used by the client.  If both modes, datagram and stream
+based, are used, it is recommended to the same mode as most recently used by the
+client or datagram mode as default. Alternatively, the client might indicate a
+preference in the configuration file.
 
 # MASQUE signaling
 
@@ -337,10 +384,10 @@ information (e.g ECN) or event-based information (e.g. ICMP).
 
 ## Config file
 
-TBD (indicate IP address handling, forwarding mode preference, ...)
+TBD (indicate IP address handling, forwarding mode preference, MTU...)
 
 
-## ECN
+## ECN {#ECN}
 
 ECN requires coordination with the e2e communication points as it should only be
 used if the endpoints are also capable and willing to signal congestion
@@ -364,7 +411,7 @@ case validation can either be done by the proxy independently or the proxy has
 to provide not only the number or received observed CE markings but also the
 number of sent and other received markings. This need further discussion.
 
-## ICMP handling
+## ICMP handling {#ICMP} 
 
 TBD
 
