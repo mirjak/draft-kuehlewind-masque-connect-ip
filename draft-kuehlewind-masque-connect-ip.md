@@ -227,7 +227,7 @@ This document defines a new HTTP/3 {{!I-D.ietf-quic-http}} method CONNECT-IP to
 convert streams into tunnels or initialise HTTP datagram flows
 {{!I-D.schinazi-quic-h3-datagram}} to a forwarding proxy.  Each stream can be
 used separately to establish forwarding of one connection to potentially
-different remote hosts. Other than the HTTP CONNECT method, CONNECT-IP however
+different remote hosts. Unlike the HTTP CONNECT method, CONNECT-IP
 does not request the forwarding proxy to establish an TCP connection to the
 remote target host. Instead the tunnel payload will be forwarded right on top of
 the IP layer, meaning the forwarding proxy has to identify messages boundaries
@@ -246,7 +246,7 @@ follows:
    connect to (equivalent to the authority-form of the request-target
    of CONNECT requests; see Section 3.2.3 of {{!I-D.ietf-httpbis-messaging}})
 
-A CONNECT request that does not conform to these restrictions is malformed; see
+A CONNECT request that does not confirm to these restrictions is malformed; see
 Section 4.1.3 of {{!I-D.ietf-quic-http}}.
 
 The forwarding stays active as long as the respective stream is open. Forwarding
@@ -287,8 +287,8 @@ transmission is is expected to only use one.
 While IP packet send in stream based mode, only have to respect the end-to-end MTU
 between the client and the target server, packet send in datagram mode are further
 restricted by the QUIC packet size of the QUIC tunnel and any overhead within
-the QUIC packet. The proxy should provide MTU and overhead information to client.
-The Client MUST take this overhead into account when indicating the MTU to the
+the QUIC packet. The proxy should provide MTU and overhead information to the client.
+The client MUST take this overhead into account when indicating the MTU to the
 application.
 
 ## IP-Protocol Header for CONNECT-IP
@@ -342,7 +342,7 @@ To request IP proxying, the client sends a CONNECT-IP request to the forwarding
 proxy indicating the target host and port in the ":authority" pseudo-header
 field. The host portion is either an IP literal encapsulated within square
 brackets, an IPv4 address in dotted-decimal form, or a registered name.
-Different than for the TCP-based CONNECT, CONNECT-IP does not trigger a
+Different to the TCP-based CONNECT, CONNECT-IP does not trigger a
 connection establishment process from the proxy to the target host. Therefore,
 the client does not need to wait for an HTTP response in order to send
 forwarding data.
@@ -416,8 +416,8 @@ label, DiffServ codepoint (DSCP), and hop limit/TTL is selected by the proxy.
 The IPv4 Protocol or IPv6 Next Header field is set based on the information
 provided by the IP-Protocol header in the CONNECT-IP request.
 
-MASQUE server MUST set the DF flag in the IPv4 header. Payload
-that does not fit into one IP packet must be dropped. An dropping
+MASQUE server MUST set the Don't Fragment (DF) flag in the IPv4 header. Payload
+that does not fit into one IP packet MUST be dropped. An dropping
 indication should be provided to the client. Further the MASQUE
 server should provide MTU information.
 
@@ -430,7 +430,7 @@ Further ECN handling is described in Section {{ECN}}.
 When the MASQUE proxy receives an incoming IP packet, it checks if the source
 and destination IP maps to an active forwarding connection. If one or more
 mappings exists, it further checks if this mapping contains additional
-identifier information and if these map as well. If no active mapping is found,
+identifier information and if these map as well then it is futher forwarded to the client . If no active mapping is found,
 the IP packet is discarded.
 
 The masque server should use the same
