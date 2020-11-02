@@ -68,7 +68,7 @@ different remote hosts. To request forwarding, a client connects to a proxy
 server by initiating a HTTP/3 connection and sends a CONNECT-IP indicating the
 address of the target server. The proxy server then forwards payload received on
 that stream or in an HTTP datagram with a certain flow ID to the target server
-after adding an IP header to each of the frame received.
+after adding an IP header to each of the frames received.
 
 --- middle
 
