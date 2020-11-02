@@ -488,6 +488,10 @@ number of sent and other received markings. This need further discussion.
 
 TBD
 
+## MTU considerations
+
+TBD
+
 # Examples
 
 TBD
