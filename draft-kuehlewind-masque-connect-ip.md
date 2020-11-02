@@ -68,7 +68,7 @@ different remote hosts. To request forwarding, a client connects to a proxy
 server by initiating a HTTP/3 connection and sends a CONNECT-IP indicating the
 address of the target server. The proxy server then forwards payload received on
 that stream or in an HTTP datagram with a certain flow ID to the target server
-after adding an IP header to each frame received.
+after adding an IP header to each of the frame received.
 
 --- middle
 
@@ -198,7 +198,7 @@ The chose IP flow model is selected due to several advantages:
     related fields and state. So this can be accomplished by simply removing the
     UDP specific processing of packets.
 
-  * CONNECT-IP can establish a new IP flow in 0-RTT: No network releated
+  * CONNECT-IP can establish a new IP flow in 0-RTT: No network related
     latencies in establishing new flow.
 
   * Minimized per packet overhead: The per packet overhead is reduced to basic
@@ -211,14 +211,14 @@ Disadvantages of this model are the following:
     challenging and require MASQUE server to client signalling.
 
 
-Discussion: This IP flow model appears less sutiable if one targets network
+Discussion: This IP flow model appears less suitable if one targets network
 proxying or running server functionality on the client side. However, as has
-been identified this functionalit will be required if one intend to support
+been identified this functionality will be required if one intend to support
 CONNECT-UDP. Thus, a potential long term solution is to have these as two
-different modes for how CONNECT-IP operates. If this other mode is tunneling the
+different modes for how CONNECT-IP operates. If this other mode is tunnelling the
 complete IP header over the MASQUE connection, then other properties are
 achieved.  It will also put other requirements on the MASQUE server related to
-IP router functionality, source address validation, and possibly network adderss
+IP router functionality, source address validation, and possibly network address
 translation.
 
 # The CONNECT-IP method {#connect-ip-method}
@@ -440,7 +440,7 @@ based, are used, it is recommended to the same mode as most recently used by the
 client or datagram mode as default. Alternatively, the client might indicate a
 preference in the configuration file.
 
-# MASQUE signaling
+# MASQUE signalling
 
 One stream of the underlying QUIC connection is used as a signalling channel
 between the client and proxy. Both the client and the masque server can send or
