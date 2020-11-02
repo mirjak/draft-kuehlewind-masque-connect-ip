@@ -82,7 +82,7 @@ HTTP/3.
 The approach taken in this paper does not send the IP header as part of the
 payload between the client and proxy in order to reduce overhead. The target IP
 address and other IP flow related information is provided by the client as part
-of the CONNCT-IP request. The sources address is selected by the proxy as
+of the CONNECT-IP request. The sources address is selected by the proxy as
 further discussed below. Other information that might be needed to construct the
 IP header or to inform the client about information from received IP packets can
 be signalled separately.
@@ -107,20 +107,19 @@ based on the CONNECT-IP context is sufficient. Signalling of other dedicated
 values may be desired in certain deployments, e.g for DCSP {{RFC2474}}.
 However, DSCP is in any case a challenge
 due to local domain dependency of the used DSCP values and the forwarding
-behavior and traffic treatment they represent. To address potential future DSCP use
-cases or other future use cases that may require additional signalling e.g. based
-on potentially new IPv6 extension headers or destination header options {{RFC8200}}
-it must be ensured that there is room for future extensions in the signalling proposed. 
+behavior and traffic treatment they represent. Future use cases for DSCP, as well as 
+new IPv6 extension headers or destination header options{{RFC8200}} may require
+additional signaling. Therefore, it is important that the signaling is extensible.
 
 The CONNECT-IP method establishes an outgoing IP flow, from the MASQUE server's
 external address to the target server's address specified by the client. The method also
 enable reception and relaying of the reverse IP flow from the target address to
 the MASQUE server to ensure that return traffic can be received by the client.
-This specification does support forwarding on incoming traffic to one of the 
+This specification supports forwarding on incoming traffic to one of the 
 clients that have an active QUIC tunnel connection with the proxy if no
 active mapping have previously been created based on an IP-CONNECT request.
 
-Following the points above, this document assume that usually one upper-layer end-to-end connection
+Following the points above, this document assumes that usually one upper-layer end-to-end connection
 is associated to one CONNECT-IP request/one tunnelling association. While it would be
 possible for a client to use the same tunnelling association for multiple 
 end-to-end connections to the same target server, as long as they all require the same
@@ -262,7 +261,7 @@ sent on that stream. Extension frames MAY be used if specifically permitted by
 the definition of the extension.  Receipt of any other known frame type MUST be
 treated as a connection error of type H3_FRAME_UNEXPECTED.
 
-Each HTTP DATA frames MUST to contain the payload of one IP packet.
+Each HTTP DATA frame MUST to contain the payload of one IP packet.
 
 Stream based mode provides in-order and reliable delivery but may introduce Head
 of Line (HoL) Blocking if independent messages are send in the IP payload.
@@ -282,7 +281,7 @@ successfully negotiated during the QUIC handshake.
 
 Datagram mode provides un-order and unreliable delivery. In theory both, stream
 as well as datagram mode, can be used in parallel, however, for most
-transmission is is expected to only use one.
+transmission it is expected to only use one.
 
 While IP packet send in stream based mode, only have to respect the end-to-end MTU
 between the client and the target server, packet send in datagram mode are further
@@ -330,7 +329,7 @@ The following parameters are defined:
 * A parameter whose name is length, and whose value is an Integer indication the
   length of the identifier field starting from the offset.
 
-Both parameter MUST be present and the header MUST be ignored if these parameter
+Both parameters MUST be present and the header MUST be ignored if these parameter
 are not present.
 
 This function can be used to e.g. indicate the source port field in the IP
@@ -347,9 +346,10 @@ connection establishment process from the proxy to the target host. Therefore,
 the client does not need to wait for an HTTP response in order to send
 forwarding data.
 
-Forwarding data can either be send directly on the same HTTP stream as the
+Forwarding data can either 
+directly on the same HTTP stream as the
 CONNECT-IP request (see Section {{stream}}), or an HTTP datagram
-encapsulated in a QUIC datagram can be send(see Section {{datagram}}),
+encapsulated in a QUIC datagram can be sent (see Section {{datagram}}),
 even in the same QUIC packet. To request use of the datagram mode,
 the CONNECT-IP request MUST indicate the datagram flow ID in the
 Datagram-Flow-Id Header.
@@ -364,7 +364,7 @@ response to the CONNECT-IP request. Wouldn't that be easier and faster?
 # MASQUE server behavior {#server}
 
 A MASQUE server that receives an IP-CONNECT request, opens a raw socket and
-creates state to map an connection identifier, which might be a tuple, to a
+creates state to map a connection identifier, which might be a tuple, to a
 target IP address. Once this is successfully established, the proxy sends a
 HEADERS frame containing a 2xx series status code to the client. To indicate
 support of datagram mode, if requested by the client, the MASQUE server reflects
@@ -384,7 +384,7 @@ TBD (e.g. out of IP address, conn-id collision)
 
 ## IP address selection and NAT
 
-As MASQUE server adds the IP header when sending the IP payload towards the
+Since a MASQUE server adds the IP header when sending the IP payload towards the
 target server, it also select an source IP address from its pool of IP address
 that are routed to the MASQUE server.
 
@@ -393,7 +393,7 @@ identifier based on Conn-ID header is provided by the client, the masque server
 uses the source/destination address 2-tuple in order to map an incoming IP
 packet to an active forwarding connection. As such the MASQUE proxy MUST select
 a source IP address that leads to a unique tuple. The same IP address can be
-used for different client when those client connect to different target servers,
+used for different clients when those client connect to different target servers,
 however, this also means that potentially multiple IP address are used for the
 same client when multiple connection to one target server are needed. This can
 be problematic if the source address is used by the target server as an
