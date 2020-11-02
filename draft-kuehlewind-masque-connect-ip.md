@@ -115,8 +115,8 @@ The CONNECT-IP method establishes an outgoing IP flow, from the MASQUE server's
 external address to the target server's address specified by the client. The method also
 enable reception and relaying of the reverse IP flow from the target address to
 the MASQUE server to ensure that return traffic can be received by the client.
-This specification supports forwarding on incoming traffic to one of the 
-clients that have an active QUIC tunnel connection with the proxy if no
+This specification supports forwarding of incoming traffic to one of the 
+clients that have a QUIC tunnel connection with the proxy only if an
 active mapping have previously been created based on an IP-CONNECT request.
 
 Following the points above, this document assumes that usually one upper-layer end-to-end connection
