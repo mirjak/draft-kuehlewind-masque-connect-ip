@@ -246,7 +246,7 @@ follows:
    connect to (equivalent to the authority-form of the request-target
    of CONNECT requests; see Section 3.2.3 of {{!I-D.ietf-httpbis-messaging}})
 
-A CONNECT request that does not confirm to these restrictions is malformed; see
+A CONNECT request that does not conform to these restrictions is malformed; see
 Section 4.1.3 of {{!I-D.ietf-quic-http}}.
 
 The forwarding stays active as long as the respective stream is open. Forwarding
