@@ -227,7 +227,7 @@ convert streams into tunnels or initialise HTTP datagram flows
 {{!I-D.schinazi-quic-h3-datagram}} to a forwarding proxy.  Each stream can be
 used separately to establish forwarding of one connection to potentially
 different remote hosts. Unlike the HTTP CONNECT method, CONNECT-IP
-does not request the forwarding proxy to establish an TCP connection to the
+does not request the forwarding proxy to establish a TCP connection to the
 remote target host. Instead the tunnel payload will be forwarded right on top of
 the IP layer, meaning the forwarding proxy has to identify messages boundaries
 and then adds an IP header to each message before forwarding (see section
@@ -252,7 +252,7 @@ The forwarding stays active as long as the respective stream is open. Forwarding
 can be either be realised by sending data on that stream together with an
 indication of message length (see {{stream}}) or use of HTTP/3 datagrams
 {{!I-D.schinazi-quic-h3-datagram}} where the payload of one frame is mapped to
-one message (see {{datagram}}).
+one IP packet (see {{datagram}}).
 
 ## Stream-based mode {#stream}
 
@@ -270,7 +270,7 @@ of Line (HoL) Blocking if independent messages are send in the IP payload.
 ## Datagram-based mode {#datagram}
 
 The client can, in addition to stream mode, request support of datagram mode
-using HTTP/3 datagram {{!I-D.schinazi-quic-h3-datagram}} to forward IP
+using HTTP/3 datagrams {{!I-D.schinazi-quic-h3-datagram}} to forward IP
 payload.
 
 To request datagram support the client adds an Datagram-Flow-Id Header to the
@@ -281,28 +281,28 @@ successfully negotiated during the QUIC handshake.
 
 Datagram mode provides un-order and unreliable delivery. In theory both, stream
 as well as datagram mode, can be used in parallel, however, for most
-transmission it is expected to only use one.
+transmissions it is expected to only use one.
 
-While IP packet send in stream based mode, only have to respect the end-to-end MTU
-between the client and the target server, packet send in datagram mode are further
+While IP packets sent in stream-based mode only have to respect the end-to-end MTU
+between the client and the target server, packets sent in datagram mode are further
 restricted by the QUIC packet size of the QUIC tunnel and any overhead within
-the QUIC packet. The proxy should provide MTU and overhead information to the client.
+the QUIC tunnel packet. The proxy should provide MTU and overhead information to the client.
 The client MUST take this overhead into account when indicating the MTU to the
 application.
 
 ## IP-Protocol Header for CONNECT-IP
 
-In order to construct the IP header the MASQUE server need to fill the "Protocol" field
+In order to construct the IP header the MASQUE server needs to fill the "Protocol" field
 in the IPv4 header or "Next header" field in the IPv6 header. As the IP payload is otherwise
 mostly opaque to the MASQUE forwarding server, this information has to be provided by
 the client for each CONNECT-IP request. Therefore this document define a new header
 field that is mandatory to use with CONNECT-IP called "IP-Protocol".
 
-IP-Protocool is a Item Structured Header {{!I-D.ietf-httpbis-header-structure}}.
-Its value MUST be a Byte Sequence. Its ABNF is:
+IP-Protocol is a Item Structured Header {{!I-D.ietf-httpbis-header-structure}}.
+Its value MUST be an Integer. Its ABNF is:
 
 ~~~
-  IP-Protocol = sf-binary
+  IP-Protocol = sf-integer
 ~~~
 
 ## Conn-ID Header for CONNECT-IP
@@ -326,14 +326,14 @@ The following parameters are defined:
   the offset of the identifier field starting from the beginning of a datagram
   or HTTP frame on the forwarding stream.
 
-* A parameter whose name is length, and whose value is an Integer indication the
+* A parameter whose name is "length", and whose value is an Integer indicating the
   length of the identifier field starting from the offset.
 
 Both parameters MUST be present and the header MUST be ignored if these parameter
 are not present.
 
 This function can be used to e.g. indicate the source port field in the IP
-payload when containing an TCP packet.
+payload when containing a TCP packet.
 
 # Client behavior {#client}
 
@@ -346,8 +346,7 @@ connection establishment process from the proxy to the target host. Therefore,
 the client does not need to wait for an HTTP response in order to send
 forwarding data.
 
-Forwarding data can either 
-directly on the same HTTP stream as the
+Forwarding data can either directly on the same HTTP stream as the
 CONNECT-IP request (see Section {{stream}}), or an HTTP datagram
 encapsulated in a QUIC datagram can be sent (see Section {{datagram}}),
 even in the same QUIC packet. To request use of the datagram mode,
@@ -370,13 +369,13 @@ HEADERS frame containing a 2xx series status code to the client. To indicate
 support of datagram mode, if requested by the client, the MASQUE server reflects
 the Datagram-Flow-Id Header from the client's request on the HTTP response.
 
-All DATA frames received on that stream as well as all HTPP/s datagrams with the
+All DATA frames received on that stream as well as all HTTP/3 datagrams with the
 specified Datagram-flow-ID are forwarded to the target server by adding an IP
 header (see section {{IP-header}} below) and sending the packet on the respective raw socket.
 
 IP packets received from the target server are mapped to an active
 forwarding connection and its payload is then respectively forwarded in an DATA
-frame or HTTP datagram to the client (see section {{receiving}} below).
+frame or HTTP/3 datagram to the client (see section {{receiving}} below).
 
 ## Error handling
 
@@ -399,7 +398,7 @@ same client when multiple connection to one target server are needed. This can
 be problematic if the source address is used by the target server as an
 identifier.
 
-If the Conn-ID header is provided the MASQUE server should use that field as an
+If the Conn-ID header is provided, the MASQUE server should use that field as an
 connection identifier together with source and destination address, as a
 3-tuple. In this case it is recommended to use a stable IP address for each
 client, while the same IP address might still be used for multiple clients, if
@@ -411,13 +410,13 @@ collision is detect.
 ## Constructing the IP header {#IP-header}
 
 To retrieve the source and destination address the proxy looks up the
-datagram flow ID or stream identifier. The IP version, flow
+mapping for the datagram flow ID or stream identifier. The IP version, flow
 label, DiffServ codepoint (DSCP), and hop limit/TTL is selected by the proxy.
 The IPv4 Protocol or IPv6 Next Header field is set based on the information
 provided by the IP-Protocol header in the CONNECT-IP request.
 
 MASQUE server MUST set the Don't Fragment (DF) flag in the IPv4 header. Payload
-that does not fit into one IP packet MUST be dropped. An dropping
+that does not fit into one IP packet MUST be dropped. A dropping
 indication should be provided to the client. Further the MASQUE
 server should provide MTU information.
 
@@ -428,7 +427,7 @@ Further ECN handling is described in Section {{ECN}}.
 ## Receiving an IP packet {#receiving}
 
 When the MASQUE proxy receives an incoming IP packet, it checks if the source
-and destination IP maps to an active forwarding connection. If one or more
+and destination IP address maps to an active forwarding connection. If one or more
 mappings exists, it further checks if this mapping contains additional
 identifier information as provided by the Conn-ID Header of the CONNECT-IP
 request. If this field maps as well, the IP payload is forwarded
@@ -436,13 +435,13 @@ to the client. If no active mapping is found, the IP packet is discarded.
 
 The masque server should use the same
 forwarding mode as used by the client.  If both modes, datagram and stream
-based, are used, it is recommended to the same mode as most recently used by the
+based, are used, it is recommended to use the same mode as most recently used by the
 client or datagram mode as default. Alternatively, the client might indicate a
 preference in the configuration file.
 
 # MASQUE signalling
 
-One stream of the underlying QUIC connection is used as a signalling channel
+One stream of the underlying QUIC connection can be used as a signalling channel
 between the client and proxy. Both the client and the masque server can send or
 request an JSON {{RFC7159}} configuration file by sending an HTTP POST or GET to
 "/.well-known/masque/config". Further the masque server can PUSH status updates
@@ -462,15 +461,17 @@ TBD (indicate IP address handling, forwarding mode preference, MTU...)
 
 ## ECN {#ECN}
 
-ECN requires coordination with the e2e communication points as it should only be
+ECN requires coordination with the end-to-end communication points as it should only be
 used if the endpoints are also capable and willing to signal congestion
 notifications to the other end and react accordingly if a congestion
-notification is received. In addition, the proxy needs to inform the client of a
-congestion notification (IP CE codepoint) was observed in any IP header of a
-received packet from the target server. This can be realised that maintaining an
-CE counter and send an updated JSON stream file if the counter changes.
+notification is received. 
 
-Further, client must indicate to the proxy for each forwarding flow/stream if
+Therefore, if ECN is used, the proxy needs to inform the client of a
+congestion notification (IP CE codepoint) was observed in any IP header of a
+received packet from the target server. This can be realised by maintaining an
+CE counter in the proxy and send an updated JSON stream file if the counter changes.
+
+Further, clients must indicate to the proxy for each forwarding flow/stream if
 the ECT(0) or ECT(1) codepoint should be set. The client can update this during
 the lifetime of a forwarding connection, however, there is no guarantee which
 packet will be forwarded with the updated information or the old information as
@@ -479,7 +480,7 @@ TCP, today, ECN is only used after the handshake. But if not all data packets
 after the handshake are immediately ECT marked, this should not have a huge
 impact.
 
-It may be needed for the endpoint to validate ECN usage on the path. In this
+It may be desirable for the endpoint to validate ECN usage on the path. In this
 case validation can either be done by the proxy independently or the proxy has
 to provide not only the number or received observed CE markings but also the
 number of sent and other received markings. This need further discussion.
@@ -520,7 +521,7 @@ maintained at <[](https://www.iana.org/assignments/http-methods)>.
 
 ## HTTP Header {#iana-header}
 
-This document (if published as RFC) registers the "Conn-Id" header in the
+This document (if published as RFC) registers the "Conn-Id" and "IP-Protocol" header in the
 "Permanent Message Header Field Names" registry maintained at
 <[](https://www.iana.org/assignments/message-headers)>.
 
@@ -529,6 +530,8 @@ This document (if published as RFC) registers the "Conn-Id" header in the
   | Header Field Name | Protocol | Status |   Reference   |
   +-------------------+----------+--------+---------------+
   | Conn-Id           |   http   |  exp   | This document |
+  +-------------------+----------+--------+---------------+
+  | IP-Protocol       |   http   |  exp   | This document |
   +-------------------+----------+--------+---------------+
 ~~~
 
