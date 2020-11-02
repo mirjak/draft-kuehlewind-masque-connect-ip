@@ -430,9 +430,9 @@ Further ECN handling is described in Section {{ECN}}.
 When the MASQUE proxy receives an incoming IP packet, it checks if the source
 and destination IP maps to an active forwarding connection. If one or more
 mappings exists, it further checks if this mapping contains additional
-identifier information and if these map as well, the IP payload is forwarded
-to the client . If no active mapping is found,
-the IP packet is discarded.
+identifier information as provided by the Conn-ID Header of the CONNECT-IP
+request. If this field maps as well, the IP payload is forwarded
+to the client. If no active mapping is found, the IP packet is discarded.
 
 The masque server should use the same
 forwarding mode as used by the client.  If both modes, datagram and stream
