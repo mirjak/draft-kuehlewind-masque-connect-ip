@@ -206,19 +206,19 @@ The chose IP flow model is selected due to several advantages:
 
 Disadvantages of this model are the following:
 
-  * Client server focused solution: Accepting non-solicited traffic is
-    challenging and require MASQUE server to client signalling.
-
+  * Client server focused solution: Accepting non-solicited server-initiated
+    traffic is challenging and require MASQUE server to client signalling when
+    incoming packets are receiived at the proxy.
 
 Discussion: This IP flow model appears less suitable if one targets network
-proxying or running server functionality on the client side. However, as has
-been identified this functionality will be required if one intend to support
-CONNECT-UDP. Thus, a potential long term solution is to have these as two
-different modes for how CONNECT-IP operates. If this other mode is tunnelling the
-complete IP header over the MASQUE connection, then other properties are
-achieved.  It will also put other requirements on the MASQUE server related to
-IP router functionality, source address validation, and possibly network address
-translation.
+proxying or running server functionality on the client side. However, the
+functionality specified in this documnet is anyway required for CONNECT-UDP
+and should therefore be utiilized to also reduce overhead for IP proxying.
+A potential solution to also support network proxying is to add 
+another modes for CONNECT-IP which would tunnel the complete IP header over the
+MASQUE forwarding connection. However, this puts addition requirements on the
+MASQUE server related to IP router functionality, source address validation,
+and possibly network address translation and therefore requires further discussion.
 
 # The CONNECT-IP method {#connect-ip-method}
 
