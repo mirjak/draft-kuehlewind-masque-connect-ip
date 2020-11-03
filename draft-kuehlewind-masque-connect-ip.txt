@@ -1,0 +1,840 @@
+
+
+
+
+MASQUE                                                     M. Kuehlewind
+Internet-Draft                                             M. Westerlund
+Intended status: Standards Track                                M. Ihlar
+Expires: 6 May 2021                                            Z. Sarker
+                                                                Ericsson
+                                                         2 November 2020
+
+
+             The CONNECT-IP method for proxying IP traffic
+               draft-kuehlewind-masque-connect-ip-latest
+
+Abstract
+
+   This draft specifies a new HTTP/3 method CONNECT-IP to proxy IP
+   traffic.  CONNECT-IP can be used to convert a QUIC stream into a
+   tunnel or initialise an HTTP datagram flow to a forwarding proxy.
+   Each stream or HTTP datagram flow can be used separately to establish
+   forwarding of an IP flow to potentially different remote hosts.  To
+   request forwarding, a client connects to a proxy server by initiating
+   a HTTP/3 connection and sends a CONNECT-IP indicating the address of
+   the target server.  The proxy server then forwards payload received
+   on that stream or in an HTTP datagram with a certain flow ID to the
+   target server after adding an IP header to each of the frames
+   received.
+
+Discussion Venues
+
+   This note is to be removed before publishing as an RFC.
+
+   Discussion of this document takes place on the MASQUE Working Group
+   mailing list (masque@ietf.org), which is archived at
+   https://mailarchive.ietf.org/arch/browse/masque/.
+
+   Source for this draft and an issue tracker can be found at
+   https://github.com/mirjak/draft-kuehlewind-masque-connect-ip.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+
+
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                   [Page 1]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 6 May 2021.
+
+Copyright Notice
+
+   Copyright (c) 2020 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Simplified BSD License text
+   as described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Simplified BSD License.
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3
+     1.1.  Definitions . . . . . . . . . . . . . . . . . . . . . . .   4
+     1.2.  Motivation of IP flow model . . . . . . . . . . . . . . .   5
+   2.  The CONNECT-IP method . . . . . . . . . . . . . . . . . . . .   6
+     2.1.  Stream-based mode . . . . . . . . . . . . . . . . . . . .   7
+     2.2.  Datagram-based mode . . . . . . . . . . . . . . . . . . .   7
+     2.3.  IP-Protocol Header for CONNECT-IP . . . . . . . . . . . .   8
+     2.4.  Conn-ID Header for CONNECT-IP . . . . . . . . . . . . . .   8
+   3.  Client behavior . . . . . . . . . . . . . . . . . . . . . . .   9
+   4.  MASQUE server behavior  . . . . . . . . . . . . . . . . . . .   9
+     4.1.  Error handling  . . . . . . . . . . . . . . . . . . . . .  10
+     4.2.  IP address selection and NAT  . . . . . . . . . . . . . .  10
+     4.3.  Constructing the IP header  . . . . . . . . . . . . . . .  10
+     4.4.  Receiving an IP packet  . . . . . . . . . . . . . . . . .  11
+   5.  MASQUE signalling . . . . . . . . . . . . . . . . . . . . . .  11
+     5.1.  Config file . . . . . . . . . . . . . . . . . . . . . . .  11
+     5.2.  ECN . . . . . . . . . . . . . . . . . . . . . . . . . . .  11
+     5.3.  ICMP handling . . . . . . . . . . . . . . . . . . . . . .  12
+     5.4.  MTU considerations  . . . . . . . . . . . . . . . . . . .  12
+   6.  Examples  . . . . . . . . . . . . . . . . . . . . . . . . . .  12
+   7.  Security considerations . . . . . . . . . . . . . . . . . . .  12
+   8.  IANA considerations . . . . . . . . . . . . . . . . . . . . .  12
+     8.1.  HTTP Method . . . . . . . . . . . . . . . . . . . . . . .  12
+     8.2.  HTTP Header . . . . . . . . . . . . . . . . . . . . . . .  13
+   Acknowledgments . . . . . . . . . . . . . . . . . . . . . . . . .  13
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                   [Page 2]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+   References  . . . . . . . . . . . . . . . . . . . . . . . . . . .  13
+     Normative References  . . . . . . . . . . . . . . . . . . . . .  13
+     Informative References  . . . . . . . . . . . . . . . . . . . .  14
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  15
+
+1.  Introduction
+
+   This document specifies the CONNECT-IP method for IPv4 [RFC0791] and
+   IPv6 [RFC8200] flows when they are proxied according to the MASQUE
+   proposal over HTTP/3.
+
+   The approach taken in this paper does not send the IP header as part
+   of the payload between the client and proxy in order to reduce
+   overhead.  The target IP address and other IP flow related
+   information is provided by the client as part of the CONNECT-IP
+   request.  The sources address is selected by the proxy as further
+   discussed below.  Other information that might be needed to construct
+   the IP header or to inform the client about information from received
+   IP packets can be signalled separately.
+
+   This proposal is based on the analysis provided in
+   [I-D.westerlund-masque-transport-issues] indicating that most
+   information in the IP header is either IP flow related or can or even
+   should be provided by the proxy as the IP communication endpoint
+   without the need for input from the client.  The only information
+   identified that requires client interaction is ECN [RFC3168] and ICMP
+   [RFC0792] [RFC4443] handling.  This document proposes an event-based
+   handling for both, which may not provide unambiguous mapping to one
+   specific IP packet that triggered the event but trades this off for
+   lower overhead.
+
+   This document uses an IP flow definition that is tighter than just
+   source and destination address of the IP packet.  To reduce the
+   overhead a number of IP header field values that are static in the
+   context of an upper layer protocol connection, e.g. when UDP or TCP
+   are used, are associated with an MASQUE IP flow at creation.  These
+   fields include the Protocol (IPv4) / Next Header (IPv6), IPv6 flow
+   label, Diffserv Code Point (DSCP), TTL / Hop Limit, where a default
+   value or locally generated value based on the CONNECT-IP context is
+   sufficient.  Signalling of other dedicated values may be desired in
+   certain deployments, e.g for DCSP [RFC2474].  However, DSCP is in any
+   case a challenge due to local domain dependency of the used DSCP
+   values and the forwarding behavior and traffic treatment they
+   represent.  Future use cases for DSCP, as well as new IPv6 extension
+   headers or destination header options[RFC8200] may require additional
+   signaling.  Therefore, it is important that the signaling is
+   extensible.
+
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                   [Page 3]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+   The CONNECT-IP method establishes an outgoing IP flow, from the
+   MASQUE server's external address to the target server's address
+   specified by the client.  The method also enable reception and
+   relaying of the reverse IP flow from the target address to the MASQUE
+   server to ensure that return traffic can be received by the client.
+   This specification supports forwarding of incoming traffic to one of
+   the clients that have a QUIC tunnel connection with the proxy only if
+   an active mapping has previously been created based on an IP-CONNECT
+   request.
+
+   Following the points above, this document assumes that usually one
+   upper-layer end-to-end connection is associated to one CONNECT-IP
+   request/one tunnelling association.  While it would be possible for a
+   client to use the same tunnelling association for multiple end-to-end
+   connections to the same target server, as long as they all require
+   the same Protocol (IPv4) / Next Header (IPv6) value, this would lead
+   to the use of the same flow ID for all connections and complicate the
+   use of ECN as feedback cannot be associated with a single packet/
+   connection.  As such this is not recommended for connection-oriented
+   transmissions.  Alternatively, the proposed approach in this document
+   could be extended to support per-packet signalling in HTTP datagrams
+   and DATA frames on streams to address this restriction, however, this
+   would increase per-packet overhead and design decisions in this
+   document where taken in order minimise byte overhead.
+
+1.1.  Definitions
+
+   *  Proxy: This document uses proxy as synonym for the MASQUE Server
+      or an HTTP proxy, depending on context.
+
+   *  Client: The endpoint initiating a MASQUE tunnel and IP relaying
+      with the proxy.
+
+   *  Target host: A remote endpoint the client wishes to establish bi-
+      directional communication with via tunnelling over the proxy.
+
+   *  IP proxying: A proxy forwarding IP payloads to a target for an IP
+      flow.  Data is decapsulate at the proxy and amended by a IP header
+      before forwarding to the target.  Packet boundaries need to be
+      preserved or signalled between the client and proxy.
+
+   *  IP flow: A flow of IP packets between two hosts as identified by
+      their IP addresses, and where all the packets share some
+      properties.  These properties include source/destination address,
+      protocol / next header field, flow label (IPv6 only), and DSCP per
+      direction.
+
+
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                   [Page 4]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+   Address = IP address
+
+                        Target Address --+
+                                          \
+   +--------+           +--------+         \ +--------+
+   |        |  Path #1  |        | Path #2  V|        |
+   | Client |<--------->|  Proxy |<--------->| Target |
+   |        |          ^|        |^          |        |
+   +--------+         / +--------+ \         +--------+
+                     /              \
+                    /                +-- Proxy's external address
+                   /
+                  +-- Proxy's service address
+
+                  Figure 1: The nodes and their addresses
+
+   Figure 1 provides an overview figure of the involved nodes, i.e.
+   client, proxy, and target host.  There are also two network paths.
+   Path #1 is the client to proxy path, where IP proxying is provided
+   over an HTTP/3 session, usually over QUIC, to tunnel IP flow(s).
+   Path #2 is the path between the proxy and the target.
+
+   The client will use the proxy's service address to establish a
+   transport connection on which to request IP proxying using HTTP/3
+   CONNECT-IP.  The proxy will then relay the client's IP flows to the
+   target host.  The IP header from the proxy to the target carries the
+   proxy's external address as source address and the target's address
+   as destination address.
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in BCP
+   14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+1.2.  Motivation of IP flow model
+
+   The chose IP flow model is selected due to several advantages:
+
+   *  Shared functionality with CONNECT-UDP: The UDP flow proxying
+      functionality of CONNECT-UDP will need to establish, store and
+      process the same IP header related fields and state.  So this can
+      be accomplished by simply removing the UDP specific processing of
+      packets.
+
+   *  CONNECT-IP can establish a new IP flow in 0-RTT: No network
+      related latencies in establishing new flow.
+
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                   [Page 5]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+   *  Minimized per packet overhead: The per packet overhead is reduced
+      to basic framing of the IP payload for each IP packet and flow
+      identifiers.
+
+   Disadvantages of this model are the following:
+
+   *  Client server focused solution: Accepting non-solicited server-
+      initiated traffic is challenging and require MASQUE server to
+      client signalling when incoming packets are receiived at the
+      proxy.
+
+   Discussion: This IP flow model appears less suitable if one targets
+   network proxying or running server functionality on the client side.
+   However, the functionality specified in this documnet is anyway
+   required for CONNECT-UDP and should therefore be utiilized to also
+   reduce overhead for IP proxying.  A potential solution to also
+   support network proxying is to add another modes for CONNECT-IP which
+   would tunnel the complete IP header over the MASQUE forwarding
+   connection.  However, this puts addition requirements on the MASQUE
+   server related to IP router functionality, source address validation,
+   and possibly network address translation and therefore requires
+   further discussion.
+
+2.  The CONNECT-IP method
+
+   This document defines a new HTTP/3 [I-D.ietf-quic-http] method
+   CONNECT-IP to convert streams into tunnels or initialise HTTP
+   datagram flows [I-D.schinazi-quic-h3-datagram] to a forwarding proxy.
+   Each stream can be used separately to establish forwarding of one
+   connection to potentially different remote hosts.  Unlike the HTTP
+   CONNECT method, CONNECT-IP does not request the forwarding proxy to
+   establish an TCP connection to the remote target host.  Instead the
+   tunnel payload will be forwarded right on top of the IP layer,
+   meaning the forwarding proxy has to identify messages boundaries and
+   then adds an IP header to each message before forwarding (see section
+   Section 4).
+
+   This document specifies CONNECT-IP only for HTTP/3 following the same
+   semantics as the CONNECT method.  As such a CONNECT-IP request MUST
+   be constructed as follows:
+
+   *  The ":method" pseudo-header field is set to "CONNECT-IP"
+
+   *  The ":scheme" and ":path" pseudo-header fields are omitted
+
+
+
+
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                   [Page 6]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+   *  The ":authority" pseudo-header field contains the host and port to
+      connect to (equivalent to the authority-form of the request-target
+      of CONNECT requests; see Section 3.2.3 of
+      [I-D.ietf-httpbis-messaging])
+
+   A CONNECT request that does not conform to these restrictions is
+   malformed; see Section 4.1.3 of [I-D.ietf-quic-http].
+
+   The forwarding stays active as long as the respective stream is open.
+   Forwarding can be either be realised by sending data on that stream
+   together with an indication of message length (see Section 2.1) or
+   use of HTTP/3 datagrams [I-D.schinazi-quic-h3-datagram] where the
+   payload of one frame is mapped to one message (see Section 2.2).
+
+2.1.  Stream-based mode
+
+   Once the CONNECT-IP method has completed, only DATA frames are
+   permitted to be sent on that stream.  Extension frames MAY be used if
+   specifically permitted by the definition of the extension.  Receipt
+   of any other known frame type MUST be treated as a connection error
+   of type H3_FRAME_UNEXPECTED.
+
+   Each HTTP DATA frame MUST to contain the payload of one IP packet.
+
+   Stream based mode provides in-order and reliable delivery but may
+   introduce Head of Line (HoL) Blocking if independent messages are
+   send in the IP payload.
+
+2.2.  Datagram-based mode
+
+   The client can, in addition to stream mode, request support of
+   datagram mode using HTTP/3 datagram [I-D.schinazi-quic-h3-datagram]
+   to forward IP payload.
+
+   To request datagram support the client adds an Datagram-Flow-Id
+   Header to the CONNECT-IP request as specified for CONNECT-UDP in
+   [I-D.schinazi-masque-connect-udp].  Datagram mode MUST only be
+   requested when the QUIC datagram extension [I-D.ietf-quic-datagram]
+   was successfully negotiated during the QUIC handshake.
+
+   Datagram mode provides un-order and unreliable delivery.  In theory
+   both, stream as well as datagram mode, can be used in parallel,
+   however, for most transmission it is expected to only use one.
+
+   While IP packet send in stream based mode, only have to respect the
+   end-to-end MTU between the client and the target server, packet send
+   in datagram mode are further restricted by the QUIC packet size of
+   the QUIC tunnel and any overhead within the QUIC packet.  The proxy
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                   [Page 7]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+   should provide MTU and overhead information to the client.  The
+   client MUST take this overhead into account when indicating the MTU
+   to the application.
+
+2.3.  IP-Protocol Header for CONNECT-IP
+
+   In order to construct the IP header the MASQUE server need to fill
+   the "Protocol" field in the IPv4 header or "Next header" field in the
+   IPv6 header.  As the IP payload is otherwise mostly opaque to the
+   MASQUE forwarding server, this information has to be provided by the
+   client for each CONNECT-IP request.  Therefore this document define a
+   new header field that is mandatory to use with CONNECT-IP called "IP-
+   Protocol".
+
+   IP-Protocool is a Item Structured Header
+   [I-D.ietf-httpbis-header-structure].  Its value MUST be a Byte
+   Sequence.  Its ABNF is:
+
+     IP-Protocol = sf-binary
+
+2.4.  Conn-ID Header for CONNECT-IP
+
+   This document further defines a new header field to be used with
+   CONNECT-IP "Conn-ID".  The Conn-ID HTTP header field indicates the
+   value, offset, and length of a field in the IP payload that can be
+   used by the MASQUE as a connection identifier in addition to the IP
+   address tuple when multiple connections are proxied to the same
+   target server.
+
+   Conn-ID is a Item Structured Header
+   [I-D.ietf-httpbis-header-structure].  Its value MUST be a Byte
+   Sequence.  Its ABNF is:
+
+     Conn-ID = sf-binary
+
+   The following parameters are defined:
+
+   *  A parameter whose name is "offset", and whose value is an Integer
+      indicating the offset of the identifier field starting from the
+      beginning of a datagram or HTTP frame on the forwarding stream.
+
+   *  A parameter whose name is length, and whose value is an Integer
+      indication the length of the identifier field starting from the
+      offset.
+
+   Both parameters MUST be present and the header MUST be ignored if
+   these parameter are not present.
+
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                   [Page 8]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+   This function can be used to e.g. indicate the source port field in
+   the IP payload when containing an TCP packet.
+
+3.  Client behavior
+
+   To request IP proxying, the client sends a CONNECT-IP request to the
+   forwarding proxy indicating the target host and port in the
+   ":authority" pseudo-header field.  The host portion is either an IP
+   literal encapsulated within square brackets, an IPv4 address in
+   dotted-decimal form, or a registered name.  Different to the TCP-
+   based CONNECT, CONNECT-IP does not trigger a connection establishment
+   process from the proxy to the target host.  Therefore, the client
+   does not need to wait for an HTTP response in order to send
+   forwarding data.
+
+   Forwarding data can either directly on the same HTTP stream as the
+   CONNECT-IP request (see Section Section 2.1), or an HTTP datagram
+   encapsulated in a QUIC datagram can be sent (see
+   Section Section 2.2), even in the same QUIC packet.  To request use
+   of the datagram mode, the CONNECT-IP request MUST indicate the
+   datagram flow ID in the Datagram-Flow-Id Header.
+
+   QUESTION: datagram flow IDs are allocated by a flow id allocation
+   service at the server in [I-D.schinazi-quic-h3-datagram].  However,
+   with CONNECT-IP you can always send your first message directly on
+   the same stream right after the CONNECT-IP request and sever could
+   provide you a flow ID together with a "2xx" response to the CONNECT-
+   IP request.  Wouldn't that be easier and faster?
+
+4.  MASQUE server behavior
+
+   A MASQUE server that receives an IP-CONNECT request, opens a raw
+   socket and creates state to map a connection identifier, which might
+   be a tuple, to a target IP address.  Once this is successfully
+   established, the proxy sends a HEADERS frame containing a 2xx series
+   status code to the client.  To indicate support of datagram mode, if
+   requested by the client, the MASQUE server reflects the Datagram-
+   Flow-Id Header from the client's request on the HTTP response.
+
+   All DATA frames received on that stream as well as all HTPP/s
+   datagrams with the specified Datagram-flow-ID are forwarded to the
+   target server by adding an IP header (see section Section 4.3 below)
+   and sending the packet on the respective raw socket.
+
+   IP packets received from the target server are mapped to an active
+   forwarding connection and its payload is then respectively forwarded
+   in an DATA frame or HTTP datagram to the client (see section
+   Section 4.4 below).
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                   [Page 9]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+4.1.  Error handling
+
+   TBD (e.g. out of IP address, conn-id collision)
+
+4.2.  IP address selection and NAT
+
+   Since a MASQUE server adds the IP header when sending the IP payload
+   towards the target server, it also select an source IP address from
+   its pool of IP address that are routed to the MASQUE server.
+
+   If no additional information about a payload field that can be used
+   as an identifier based on Conn-ID header is provided by the client,
+   the masque server uses the source/destination address 2-tuple in
+   order to map an incoming IP packet to an active forwarding
+   connection.  As such the MASQUE proxy MUST select a source IP address
+   that leads to a unique tuple.  The same IP address can be used for
+   different clients when those client connect to different target
+   servers, however, this also means that potentially multiple IP
+   address are used for the same client when multiple connection to one
+   target server are needed.  This can be problematic if the source
+   address is used by the target server as an identifier.
+
+   If the Conn-ID header is provided the MASQUE server should use that
+   field as an connection identifier together with source and
+   destination address, as a 3-tuple.  In this case it is recommended to
+   use a stable IP address for each client, while the same IP address
+   might still be used for multiple clients, if not indicated
+   differently by the client in the configuration file.  Note that if
+   the same IP address is used for multiple clients, this can still lead
+   to an identifier collision and the IP-CONNECT request MUST be reject
+   if such a collision is detect.
+
+4.3.  Constructing the IP header
+
+   To retrieve the source and destination address the proxy looks up the
+   datagram flow ID or stream identifier.  The IP version, flow label,
+   DiffServ codepoint (DSCP), and hop limit/TTL is selected by the
+   proxy.  The IPv4 Protocol or IPv6 Next Header field is set based on
+   the information provided by the IP-Protocol header in the CONNECT-IP
+   request.
+
+   MASQUE server MUST set the Don't Fragment (DF) flag in the IPv4
+   header.  Payload that does not fit into one IP packet MUST be
+   dropped.  An dropping indication should be provided to the client.
+   Further the MASQUE server should provide MTU information.
+
+   The ECN field is by default set to non-ECN capable transport (non-
+   ECT).  Further ECN handling is described in Section Section 5.2.
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                  [Page 10]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+4.4.  Receiving an IP packet
+
+   When the MASQUE proxy receives an incoming IP packet, it checks if
+   the source and destination IP maps to an active forwarding
+   connection.  If one or more mappings exists, it further checks if
+   this mapping contains additional identifier information as provided
+   by the Conn-ID Header of the CONNECT-IP request.  If this field maps
+   as well, the IP payload is forwarded to the client.  If no active
+   mapping is found, the IP packet is discarded.
+
+   The masque server should use the same forwarding mode as used by the
+   client.  If both modes, datagram and stream based, are used, it is
+   recommended to the same mode as most recently used by the client or
+   datagram mode as default.  Alternatively, the client might indicate a
+   preference in the configuration file.
+
+5.  MASQUE signalling
+
+   One stream of the underlying QUIC connection is used as a signalling
+   channel between the client and proxy.  Both the client and the masque
+   server can send or request an JSON [RFC7159] configuration file by
+   sending an HTTP POST or GET to "/.well-known/masque/config".  Further
+   the masque server can PUSH status updates about certain forwarding
+   streams or datagram flows, e.g. contain ECN [RFC3168] counters or the
+   outside facing IP address used for this connection, to "/.well-known/
+   masque/<id>".
+
+   Note: Alternative approach would be to use HTTP headers with IP-
+   CONNECT for initial negotiation and new HTTP frame format(s) to
+   provide per-packet information (e.g ECN) or event-based information
+   (e.g.  ICMP).
+
+5.1.  Config file
+
+   TBD (indicate IP address handling, forwarding mode preference,
+   MTU...)
+
+5.2.  ECN
+
+   ECN requires coordination with the e2e communication points as it
+   should only be used if the endpoints are also capable and willing to
+   signal congestion notifications to the other end and react
+   accordingly if a congestion notification is received.  In addition,
+   the proxy needs to inform the client of a congestion notification (IP
+   CE codepoint) was observed in any IP header of a received packet from
+   the target server.  This can be realised that maintaining an CE
+   counter and send an updated JSON stream file if the counter changes.
+
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                  [Page 11]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+   Further, client must indicate to the proxy for each forwarding flow/
+   stream if the ECT(0) or ECT(1) codepoint should be set.  The client
+   can update this during the lifetime of a forwarding connection,
+   however, there is no guarantee which packet will be forwarded with
+   the updated information or the old information as QUIC datagrams may
+   be delivered out of order.  If the IP payload is e.g. carrying TCP,
+   today, ECN is only used after the handshake.  But if not all data
+   packets after the handshake are immediately ECT marked, this should
+   not have a huge impact.
+
+   It may be needed for the endpoint to validate ECN usage on the path.
+   In this case validation can either be done by the proxy independently
+   or the proxy has to provide not only the number or received observed
+   CE markings but also the number of sent and other received markings.
+   This need further discussion.
+
+5.3.  ICMP handling
+
+   TBD
+
+5.4.  MTU considerations
+
+   TBD
+
+6.  Examples
+
+   TBD
+
+7.  Security considerations
+
+   This document does currently not discuss risks that are generic to
+   the MASQUE approach.
+
+   Any CONNECT-IP specific risks need further consideration in future,
+   especially when the handling of IP functions is defined in more
+   detail.
+
+8.  IANA considerations
+
+8.1.  HTTP Method
+
+   This document (if published as RFC) registers "CONNECT-IP" in the
+   HTTP Method Registry maintained at <https://www.iana.org/assignments/
+   http-methods>.
+
+
+
+
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                  [Page 12]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+     +--------------+------+------------+---------------+
+     | Method Name  | Safe | Idempotent |   Reference   |
+     +--------------+------+------------+---------------+
+     | CONNECT-QUIC |  no  |     no     | This document |
+     +--------------+------+------------+---------------+
+
+8.2.  HTTP Header
+
+   This document (if published as RFC) registers the "Conn-Id" header in
+   the "Permanent Message Header Field Names" registry maintained at
+   <https://www.iana.org/assignments/message-headers>.
+
+     +-------------------+----------+--------+---------------+
+     | Header Field Name | Protocol | Status |   Reference   |
+     +-------------------+----------+--------+---------------+
+     | Conn-Id           |   http   |  exp   | This document |
+     +-------------------+----------+--------+---------------+
+
+Acknowledgments
+
+References
+
+Normative References
+
+   [I-D.ietf-httpbis-header-structure]
+              Nottingham, M. and P. Kamp, "Structured Field Values for
+              HTTP", Work in Progress, Internet-Draft, draft-ietf-
+              httpbis-header-structure-19, 3 June 2020,
+              <http://www.ietf.org/internet-drafts/draft-ietf-httpbis-
+              header-structure-19.txt>.
+
+   [I-D.ietf-httpbis-messaging]
+              Fielding, R., Nottingham, M., and J. Reschke, "HTTP/1.1
+              Messaging", Work in Progress, Internet-Draft, draft-ietf-
+              httpbis-messaging-12, 2 October 2020,
+              <http://www.ietf.org/internet-drafts/draft-ietf-httpbis-
+              messaging-12.txt>.
+
+   [I-D.ietf-quic-datagram]
+              Pauly, T., Kinnear, E., and D. Schinazi, "An Unreliable
+              Datagram Extension to QUIC", Work in Progress, Internet-
+              Draft, draft-ietf-quic-datagram-01, 24 August 2020,
+              <http://www.ietf.org/internet-drafts/draft-ietf-quic-
+              datagram-01.txt>.
+
+
+
+
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                  [Page 13]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+   [I-D.ietf-quic-http]
+              Bishop, M., "Hypertext Transfer Protocol Version 3
+              (HTTP/3)", Work in Progress, Internet-Draft, draft-ietf-
+              quic-http-32, 20 October 2020, <http://www.ietf.org/
+              internet-drafts/draft-ietf-quic-http-32.txt>.
+
+   [I-D.schinazi-masque-connect-udp]
+              Schinazi, D., "The CONNECT-UDP HTTP Method", Work in
+              Progress, Internet-Draft, draft-schinazi-masque-connect-
+              udp-00, 16 April 2020, <http://www.ietf.org/internet-
+              drafts/draft-schinazi-masque-connect-udp-00.txt>.
+
+   [I-D.schinazi-quic-h3-datagram]
+              Schinazi, D., "Using QUIC Datagrams with HTTP/3", Work in
+              Progress, Internet-Draft, draft-schinazi-quic-h3-datagram-
+              05, 12 October 2020, <http://www.ietf.org/internet-drafts/
+              draft-schinazi-quic-h3-datagram-05.txt>.
+
+   [RFC0791]  Postel, J., "Internet Protocol", STD 5, RFC 791,
+              DOI 10.17487/RFC0791, September 1981,
+              <https://www.rfc-editor.org/info/rfc791>.
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/info/rfc2119>.
+
+   [RFC3168]  Ramakrishnan, K., Floyd, S., and D. Black, "The Addition
+              of Explicit Congestion Notification (ECN) to IP",
+              RFC 3168, DOI 10.17487/RFC3168, September 2001,
+              <https://www.rfc-editor.org/info/rfc3168>.
+
+   [RFC7159]  Bray, T., Ed., "The JavaScript Object Notation (JSON) Data
+              Interchange Format", RFC 7159, DOI 10.17487/RFC7159, March
+              2014, <https://www.rfc-editor.org/info/rfc7159>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/info/rfc8174>.
+
+   [RFC8200]  Deering, S. and R. Hinden, "Internet Protocol, Version 6
+              (IPv6) Specification", STD 86, RFC 8200,
+              DOI 10.17487/RFC8200, July 2017,
+              <https://www.rfc-editor.org/info/rfc8200>.
+
+Informative References
+
+
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                  [Page 14]
+
+Internet-Draft              CONNECT-IP method              November 2020
+
+
+   [I-D.westerlund-masque-transport-issues]
+              Westerlund, M., Ihlar, M., Sarker, Z., and M. Kuehlewind,
+              "Transport Considerations for IP and UDP Proxying in
+              MASQUE", Work in Progress, Internet-Draft, draft-
+              westerlund-masque-transport-issues-00, 10 July 2020,
+              <http://www.ietf.org/internet-drafts/draft-westerlund-
+              masque-transport-issues-00.txt>.
+
+   [RFC0792]  Postel, J., "Internet Control Message Protocol", STD 5,
+              RFC 792, DOI 10.17487/RFC0792, September 1981,
+              <https://www.rfc-editor.org/info/rfc792>.
+
+   [RFC2474]  Nichols, K., Blake, S., Baker, F., and D. Black,
+              "Definition of the Differentiated Services Field (DS
+              Field) in the IPv4 and IPv6 Headers", RFC 2474,
+              DOI 10.17487/RFC2474, December 1998,
+              <https://www.rfc-editor.org/info/rfc2474>.
+
+   [RFC4443]  Conta, A., Deering, S., and M. Gupta, Ed., "Internet
+              Control Message Protocol (ICMPv6) for the Internet
+              Protocol Version 6 (IPv6) Specification", STD 89,
+              RFC 4443, DOI 10.17487/RFC4443, March 2006,
+              <https://www.rfc-editor.org/info/rfc4443>.
+
+Authors' Addresses
+
+   Mirja Kuehlewind
+   Ericsson
+
+   Email: mirja.kuehlewind@ericsson.com
+
+
+   Magnus Westerlund
+   Ericsson
+
+   Email: magnus.westerlund@ericsson.com
+
+
+   Marcus Ihlar
+   Ericsson
+
+   Email: marcus.ihlar@ericsson.com
+
+
+   Zaheduzzaman Sarker
+   Ericsson
+
+   Email: zaheduzzaman.sarker@ericsson.com
+
+
+
+Kuehlewind, et al.         Expires 6 May 2021                  [Page 15]

@@ -1,0 +1,292 @@
+{
+  "magic": "E!vIA5L86J2I",
+  "timestamp": "2020-11-03T00:33:32.539915+00:00",
+  "repo": "mirjak/draft-kuehlewind-masque-connect-ip",
+  "labels": [
+    {
+      "name": "bug",
+      "description": "Something isn't working",
+      "color": "d73a4a"
+    },
+    {
+      "name": "documentation",
+      "description": "Improvements or additions to documentation",
+      "color": "0075ca"
+    },
+    {
+      "name": "duplicate",
+      "description": "This issue or pull request already exists",
+      "color": "cfd3d7"
+    },
+    {
+      "name": "enhancement",
+      "description": "New feature or request",
+      "color": "a2eeef"
+    },
+    {
+      "name": "help wanted",
+      "description": "Extra attention is needed",
+      "color": "008672"
+    },
+    {
+      "name": "good first issue",
+      "description": "Good for newcomers",
+      "color": "7057ff"
+    },
+    {
+      "name": "invalid",
+      "description": "This doesn't seem right",
+      "color": "e4e669"
+    },
+    {
+      "name": "question",
+      "description": "Further information is requested",
+      "color": "d876e3"
+    },
+    {
+      "name": "wontfix",
+      "description": "This will not be worked on",
+      "color": "ffffff"
+    }
+  ],
+  "issues": [
+    {
+      "number": 2,
+      "id": "MDU6SXNzdWU3MzM5NDkzODY=",
+      "title": "No description how proxy should calculate or send MTU information",
+      "url": "https://github.com/mirjak/draft-kuehlewind-masque-connect-ip/issues/2",
+      "state": "OPEN",
+      "author": "zaheduzzaman",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "In the section describing the Masque server behavior for datagram there is not information about how to calculate and send the MTU information to the client. The section with IP header creation only mentions the Masque server should provide MTU (to whom?)",
+      "createdAt": "2020-11-01T12:02:15Z",
+      "updatedAt": "2020-11-02T10:22:08Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "mirjak",
+          "authorAssociation": "OWNER",
+          "body": "Yes, this needs further details. However, I would leave this for the next -01 version as this also need more information in the singling section.",
+          "createdAt": "2020-11-02T10:20:07Z",
+          "updatedAt": "2020-11-02T10:20:07Z"
+        },
+        {
+          "author": "zaheduzzaman",
+          "authorAssociation": "COLLABORATOR",
+          "body": "thats fine. in that case may be it is better to add TBD explicitly in the draft on these matters.",
+          "createdAt": "2020-11-02T10:22:08Z",
+          "updatedAt": "2020-11-02T10:22:08Z"
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "id": "MDU6SXNzdWU3MzM5NDk4ODI=",
+      "title": "additional identifier information for mapping on receiving IP packets",
+      "url": "https://github.com/mirjak/draft-kuehlewind-masque-connect-ip/issues/3",
+      "state": "CLOSED",
+      "author": "zaheduzzaman",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "In the section Receiving IP packet, shall we be more specific about the additional identifier information required.",
+      "createdAt": "2020-11-01T12:05:08Z",
+      "updatedAt": "2020-11-02T10:19:14Z",
+      "closedAt": "2020-11-02T10:19:14Z",
+      "comments": [
+        {
+          "author": "mirjak",
+          "authorAssociation": "OWNER",
+          "body": "Done. This is the information provided by the Conn-ID Header.",
+          "createdAt": "2020-11-02T10:19:13Z",
+          "updatedAt": "2020-11-02T10:19:13Z"
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "id": "MDU6SXNzdWU3MzQ2NjM0MDA=",
+      "title": "Raw socket is not explained as a terminology. Perhaps define it in definitions.",
+      "url": "https://github.com/mirjak/draft-kuehlewind-masque-connect-ip/issues/4",
+      "state": "OPEN",
+      "author": "mirjak",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2020-11-02T16:51:46Z",
+      "updatedAt": "2020-11-02T16:51:46Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 5,
+      "id": "MDU6SXNzdWU3MzQ2NjM1NzQ=",
+      "title": "Why is a dedicated stream needed for signaling?",
+      "url": "https://github.com/mirjak/draft-kuehlewind-masque-connect-ip/issues/5",
+      "state": "OPEN",
+      "author": "mirjak",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2020-11-02T16:52:00Z",
+      "updatedAt": "2020-11-02T16:52:00Z",
+      "closedAt": null,
+      "comments": []
+    }
+  ],
+  "pulls": [
+    {
+      "number": 1,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTEzNjA4MzA0",
+      "title": "Update draft-kuehlewind-masque-connect-ip.md",
+      "url": "https://github.com/mirjak/draft-kuehlewind-masque-connect-ip/pull/1",
+      "state": "MERGED",
+      "author": "zaheduzzaman",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Some editorial suggestions",
+      "createdAt": "2020-11-01T11:54:56Z",
+      "updatedAt": "2020-11-02T10:16:23Z",
+      "baseRepository": "mirjak/draft-kuehlewind-masque-connect-ip",
+      "baseRefName": "master",
+      "baseRefOid": "5b5e89c1bbc8907c2f6873fb9011093d8ef95525",
+      "headRepository": "mirjak/draft-kuehlewind-masque-connect-ip",
+      "headRefName": "zaheduzzaman-patch-1",
+      "headRefOid": "65b00a95279b93f00613bdf00a4de0ae113180ce",
+      "closedAt": "2020-11-02T10:16:14Z",
+      "mergedAt": "2020-11-02T10:16:14Z",
+      "mergedBy": "mirjak",
+      "mergeCommit": {
+        "oid": "664e9d4b0b0329521be41646db1b734fc916c77f"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTIxNDg3NjI0",
+          "commit": {
+            "abbreviatedOid": "375e599"
+          },
+          "author": "gloinul",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "So one change needed, otherwise we can merge.",
+          "createdAt": "2020-11-02T10:05:55Z",
+          "updatedAt": "2020-11-02T10:07:02Z",
+          "comments": [
+            {
+              "originalPosition": 14,
+              "body": "I think Conform is the right usage here.",
+              "createdAt": "2020-11-02T10:05:56Z",
+              "updatedAt": "2020-11-02T10:15:07Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTIxNDkxMDk3",
+          "commit": {
+            "abbreviatedOid": "375e599"
+          },
+          "author": "zaheduzzaman",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2020-11-02T10:10:05Z",
+          "updatedAt": "2020-11-02T10:10:06Z",
+          "comments": [
+            {
+              "originalPosition": 14,
+              "body": "your thinking is correct..conform can be used ",
+              "createdAt": "2020-11-02T10:10:05Z",
+              "updatedAt": "2020-11-02T10:15:07Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTIxNDkxOTg5",
+          "commit": {
+            "abbreviatedOid": "375e599"
+          },
+          "author": "mirjak",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2020-11-02T10:11:16Z",
+          "updatedAt": "2020-11-02T10:11:16Z",
+          "comments": [
+            {
+              "originalPosition": 14,
+              "body": "```suggestion\r\nA CONNECT request that does not conform to these restrictions is malformed; see\r\n```",
+              "createdAt": "2020-11-02T10:11:16Z",
+              "updatedAt": "2020-11-02T10:15:07Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTIxNDk0MjE4",
+          "commit": {
+            "abbreviatedOid": "56cff6a"
+          },
+          "author": "mirjak",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2020-11-02T10:14:14Z",
+          "updatedAt": "2020-11-02T10:14:14Z",
+          "comments": [
+            {
+              "originalPosition": 45,
+              "body": "```suggestion\r\nidentifier information and if these map as well, the IP payload forwarded to the client . If no active mapping is found,\r\n```",
+              "createdAt": "2020-11-02T10:14:14Z",
+              "updatedAt": "2020-11-02T10:15:07Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTIxNDk0NDk5",
+          "commit": {
+            "abbreviatedOid": "ca4332b"
+          },
+          "author": "mirjak",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2020-11-02T10:14:35Z",
+          "updatedAt": "2020-11-02T10:14:36Z",
+          "comments": [
+            {
+              "originalPosition": 45,
+              "body": "```suggestion\r\nidentifier information and if these map as well, the IP payload is forwarded to the client . If no active mapping is found,\r\n```",
+              "createdAt": "2020-11-02T10:14:35Z",
+              "updatedAt": "2020-11-02T10:15:07Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTIxNDk0ODA5",
+          "commit": {
+            "abbreviatedOid": "b8585e3"
+          },
+          "author": "mirjak",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2020-11-02T10:15:00Z",
+          "updatedAt": "2020-11-02T10:15:00Z",
+          "comments": [
+            {
+              "originalPosition": 45,
+              "body": "```suggestion\r\nidentifier information and if these map as well, the IP payload is forwarded\r\nto the client . If no active mapping is found,\r\n```",
+              "createdAt": "2020-11-02T10:15:00Z",
+              "updatedAt": "2020-11-02T10:15:07Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
