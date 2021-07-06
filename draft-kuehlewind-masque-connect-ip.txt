@@ -500,11 +500,17 @@ Table of Contents
 
    IP-Address is a Item Structured Header [RFC8941].  Its value MUST be
    an String contain an IP address or IP range of the same IP version as
-   indicated in the IP-Version header.  This header is used to request
-   the use of a certain IP address or IP address range.  If the IP-
-   Address header is not presented, the proxy is implicitly request to
-   assign an IP address or IP address range and provide this information
-   to the client with the HTTP response.
+   indicated in the IP-Version header.
+
+   This header is used to request the use of a certain IP address or IP
+   address range.  If the IP-Address header is not presented, the proxy
+   is implicitly request to assign an IP address or IP address range and
+   provide this information to the client with the HTTP response.
+
+   If the the client does not provide an IP address or IP address range
+   is has to wait for the proxy response before any payload data can be
+   sent.  If the request is denied by the proxy as sent payload data
+   will be discarded and a new CONNECT-IP request has to be sent.
 
      IP-Address = sf-string
 
