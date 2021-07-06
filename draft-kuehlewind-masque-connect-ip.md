@@ -90,10 +90,10 @@ contain the host and listing port of the proxy itself. In this mode the proxy
 just blindly forwards all payload on it outfacing interface without any modification
 and also forwards all incoming traffic to registered clients as
 payload within the respective tunneling association. However, a proxy MUST offer
-this service only for known clients and clients MUST be authenficated
+this service only for known clients and clients MUST be authentificated
 during connection establishment. The proxy SHOULLD inspect the source
 IP address of the IP packet in the tunnel payload and only forward is the IP address
-matches a set of registered client IP address. Optionally a proxy also MAY offer this
+matches a set of registered client IP address. Optionally, a proxy also MAY offer this
 service only for a limited set of target addresses. In such a case the proxy SHOULD
 also inspect the destination IP address and reject packets with unknown destination
 address with an error message.
@@ -326,6 +326,8 @@ brackets, an IPv4 address in dotted-decimal form, or a registered name.
 Further the CONNECT-IP request MUST contain the IP-Protocol header and MAY
 contain the Conn-ID header.
 
+Request use of stable (provide stream ID of active CONNECT request) or different IP addresses (new HTTP header).
+
 ## IP-Protocol Header for CONNECT-IP
 
 In order to construct the IP header the MASQUE server needs to fill the "Protocol" field
@@ -344,7 +346,7 @@ Its value MUST be an Integer. Its ABNF is:
 ## Conn-ID Header for CONNECT-IP
 
 This document further defines a new header field to be used with CONNECT-IP
-"Conn-ID".  The Conn-ID HTTP header field indicates the value, offset, and
+"Conn-ID". The Conn-ID HTTP header field indicates the value, offset, and
 length of a field in the IP payload that can be used by the MASQUE as a
 connection identifier in addition to the IP address tuple when multiple
 connections are proxied to the same target server.
@@ -376,6 +378,8 @@ payload when containing a TCP packet.
 In tunnel mode, the CONNECT-IP request MUST contain the IP-Version header to
 indicate if IPv4 or IPv6 is used for the IP packet in the tunnel payload.
 
+Request an IP or IP address range optionally (new HTTP header).
+
 ## IP-Version header for CONNECT-IP
 
 
@@ -392,6 +396,9 @@ target IP address. Once this is successfully established, the proxy sends a
 HEADERS frame containing a 2xx series status code to the client. To indicate
 support of datagram mode, if requested by the client, the MASQUE server reflects
 the Datagram-Flow-Id Header from the client's request on the HTTP response.
+
+Response contains outgoing IP address or IP range; optional for tunneling mode.
+
 
 All DATA frames received on that stream as well as all HTTP/3 datagrams with the
 specified Datagram-flow-ID are forwarded to the target server by adding an IP
