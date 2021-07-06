@@ -21,7 +21,7 @@ Abstract
    proxy.  CONNECT-IP supports two modes: a pure tunneling mode where
    packets are forwarded without modifications and flow forwarding mode
    which supports optimiation for individual IP flows forwarded to
-   decicated target servers.  To request tunnelin or forwarding, a
+   decicated target servers.  To request tunneling or forwarding, a
    client connects to a proxy server by initiating a HTTP/3 connection
    and sends a CONNECT-IP which either indicates the address of the
    proxy or the target server.  The proxy then forwards payload received
@@ -83,16 +83,16 @@ Table of Contents
      3.1.  IP-Protocol Header for CONNECT-IP
      3.2.  Conn-ID Header for CONNECT-IP
    4.  Requesting Tunnel mode
+     4.1.  IP-Version header for CONNECT-IP
    5.  MASQUE server behavior
      5.1.  Error handling
      5.2.  IP address selection and NAT
      5.3.  Constructing the IP header
      5.4.  Receiving an IP packet
-   6.  MASQUE signalling
-     6.1.  Config file
-     6.2.  ECN
-     6.3.  ICMP handling
-     6.4.  MTU considerations
+   6.  Additional signalling
+     6.1.  ECN
+     6.2.  ICMP handling
+     6.3.  MTU considerations
    7.  Examples
    8.  Security considerations
    9.  IANA considerations
@@ -110,6 +110,10 @@ Table of Contents
    IPv6 [RFC8200] flows when they are proxied according to the MASQUE
    proposal over HTTP/3.
 
+   In flow forwarding mode the proxy has authority about the outgoing IP
+   used, while in tunnel mode the IP address must be known and set by
+   the client.
+
 1.1.  Tunnel mode
 
    In tunnel mode the ":authority" pseudo-header field of the CONNECT-IP
@@ -117,15 +121,15 @@ Table of Contents
    this mode the proxy just blindly forwards all payload on it outfacing
    interface without any modification and also forwards all incoming
    traffic to registered clients as payload within the respective
-   tunneling associiation.  However, a proxy MUST offer this service
-   only for known clients and clients MUST present a valid
-   authenfication certificate during connection establishment.  The
-   proxy SHOULLD inspect the source IP address of the IP packet in the
-   tunnel payload and only forward is the IP address matches a set of
-   registered client IP address.  Optionally a proxy also MAY offer this
-   service only for a limited set of target addresses.  In such a case
-   the proxy SHOULD also inspect the destination IP address and reject
-   packets with unknown destination address with an error message.
+   tunneling association.  However, a proxy MUST offer this service only
+   for known clients and clients MUST be authenficated during connection
+   establishment.  The proxy SHOULLD inspect the source IP address of
+   the IP packet in the tunnel payload and only forward is the IP
+   address matches a set of registered client IP address.  Optionally a
+   proxy also MAY offer this service only for a limited set of target
+   addresses.  In such a case the proxy SHOULD also inspect the
+   destination IP address and reject packets with unknown destination
+   address with an error message.
 
 1.2.  Flow Forwarding mode
 
@@ -167,6 +171,10 @@ Table of Contents
    without the need for input from the client.  The only information
    identified that requires client interaction is ECN [RFC3168] and ICMP
    [RFC0792] [RFC4443] handling.
+
+   _** Rewrite this part to indicate which information is or can be
+   signaled to/from the client (target address, protocol field) or is
+   set by the proxy **_
 
    Therefore, flow forwading mode uses an IP flow definition that is
    tighter than just source and destination address of the IP packet.
@@ -418,6 +426,14 @@ Table of Contents
 
 4.  Requesting Tunnel mode
 
+   In tunnel mode, the CONNECT-IP request MUST contain the IP-Version
+   header to indicate if IPv4 or IPv6 is used for the IP packet in the
+   tunnel payload.
+
+4.1.  IP-Version header for CONNECT-IP
+
+     IP-Version = sf-integer
+
 5.  MASQUE server behavior
 
    A MASQUE server that receives an IP-CONNECT request, opens a raw
@@ -485,17 +501,25 @@ Table of Contents
    Further the MASQUE server should provide MTU information.
 
    The ECN field is by default set to non-ECN capable transport (non-
-   ECT).  Further ECN handling is described in Section Section 6.2.
+   ECT).  Further ECN handling is described in Section Section 6.1.
 
 5.4.  Receiving an IP packet
 
    When the MASQUE proxy receives an incoming IP packet, it checks if
-   the source and destination IP address maps to an active forwarding
-   connection.  If one or more mappings exists, it further checks if
-   this mapping contains additional identifier information as provided
-   by the Conn-ID Header of the CONNECT-IP request.  If this field maps
-   as well, the IP payload is forwarded to the client.  If no active
-   mapping is found, the IP packet is discarded.
+   the source and destination IP address as well as the IPv4 Protocol or
+   IPv6 Next header field and maps to an active tunnel or flow
+   forwarding association.
+
+   If one or more mappings exists, it further checks if this mapping
+   contains additional identifier information as provided by the Conn-ID
+   Header of the CONNECT-IP request.  If this field maps as well, the IP
+   payload is forwarded to the client.  If no active mapping is found,
+   the IP packet is discarded.
+
+   If a client has a tunnel as well as multiple flow forwarding
+   associations, the proxy need to check the mappings for the flow
+   forwarding associations first, and only send it over the the tunnel
+   association if no active flow forwarding is found.
 
    The masque server should use the same forwarding mode as used by the
    client.  If both modes, datagram and stream based, are used, it is
@@ -503,28 +527,9 @@ Table of Contents
    or datagram mode as default.  Alternatively, the client might
    indicate a preference in the configuration file.
 
-6.  MASQUE signalling
+6.  Additional signalling
 
-   One stream of the underlying QUIC connection can be used as a
-   signalling channel between the client and proxy.  Both the client and
-   the masque server can send or request an JSON [RFC7159] configuration
-   file by sending an HTTP POST or GET to "/.well-known/masque/config".
-   Further the masque server can PUSH status updates about certain
-   forwarding streams or datagram flows, e.g. contain ECN [RFC3168]
-   counters or the outside facing IP address used for this connection,
-   to "/.well-known/masque/<id>".
-
-   Note: Alternative approach would be to use HTTP headers with IP-
-   CONNECT for initial negotiation and new HTTP frame format(s) to
-   provide per-packet information (e.g ECN) or event-based information
-   (e.g.  ICMP).
-
-6.1.  Config file
-
-   TBD (indicate IP address handling, forwarding mode preference,
-   MTU...)
-
-6.2.  ECN
+6.1.  ECN
 
    ECN requires coordination with the end-to-end communication points as
    it should only be used if the endpoints are also capable and willing
@@ -533,31 +538,17 @@ Table of Contents
 
    Therefore, if ECN is used, the proxy needs to inform the client of a
    congestion notification (IP CE codepoint) was observed in any IP
-   header of a received packet from the target server.  This can be
-   realised by maintaining an CE counter in the proxy and send an
-   updated JSON stream file if the counter changes.
+   header of a received packet from the target server.
 
-   Further, clients must indicate to the proxy for each forwarding flow/
-   stream if the ECT(0) or ECT(1) codepoint should be set.  The client
-   can update this during the lifetime of a forwarding connection,
-   however, there is no guarantee which packet will be forwarded with
-   the updated information or the old information as QUIC datagrams may
-   be delivered out of order.  If the IP payload is e.g. carrying TCP,
-   today, ECN is only used after the handshake.  But if not all data
-   packets after the handshake are immediately ECT marked, this should
-   not have a huge impact.
+   Possible realizations are: a) always have two bits before payload in
+   flow forwarding model or use 4 different context IDs.
 
-   It may be desirable for the endpoint to validate ECN usage on the
-   path.  In this case validation can either be done by the proxy
-   independently or the proxy has to provide not only the number or
-   received observed CE markings but also the number of sent and other
-   received markings.  This need further discussion.
+6.2.  ICMP handling
 
-6.3.  ICMP handling
+   ICMP messages are directly forwarded in tunneling mode.  In flow
+   forwarding mode Context IDs can be used to forward if requested.
 
-   TBD
-
-6.4.  MTU considerations
+6.3.  MTU considerations
 
    TBD
 
