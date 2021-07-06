@@ -62,13 +62,14 @@ informative:
 
 This draft specifies a new HTTP/3 method CONNECT-IP to proxy IP traffic.
 CONNECT-IP can be used to convert a QUIC stream into a tunnel or initialise an
-HTTP datagram flow to a forwarding proxy. Each stream or HTTP datagram flow can
-be used separately to establish forwarding of an IP flow to potentially
-different remote hosts. To request forwarding, a client connects to a proxy
-server by initiating a HTTP/3 connection and sends a CONNECT-IP indicating the
-address of the target server. The proxy server then forwards payload received on
-that stream or in an HTTP datagram with a certain flow ID to the target server
-after adding an IP header to each of the frames received.
+HTTP datagram association to a forwarding proxy. 
+CONNECT-IP supports two modes: a pure tunneling mode where packets are forwarded
+without modifications and flow forwarding mode which supports optimiation
+for individual IP flows forwarded to decicated target servers.
+To request tunnelin or forwarding, a client connects to a proxy
+server by initiating a HTTP/3 connection and sends a CONNECT-IP which either indicates the
+address of the proxy or the target server. The proxy then forwards payload received on
+that stream or in an HTTP datagram with a certain flow ID.
 
 --- middle
 
@@ -79,22 +80,47 @@ This document specifies the CONNECT-IP method for IPv4 {{RFC0791}} and IPv6
 {{RFC8200}} flows when they are proxied according to the MASQUE proposal over
 HTTP/3.
 
-The approach taken in this paper does not send the IP header as part of the
-payload between the client and proxy in order to reduce overhead. The target IP
-address and other IP flow related information is provided by the client as part
-of the CONNECT-IP request. The sources address is selected by the proxy as
-further discussed below. Other information that might be needed to construct the
+## Tunnel mode
+
+In tunnel mode the ":authority" pseudo-header field of the CONNECT-IP request
+contain the host and listing port of the proxy itself. In this mode the proxy
+just blindly forwards all payload on it outfacing interface without any modification
+and also forwards all incoming traffic to registered clients as
+payload within the respective tunneling associiation. However, a proxy MUST offer
+this service only for known clients and clients MUST present a valid authenfication
+certificate during connection establishment. The proxy SHOULLD inspect the source
+IP address of the IP packet in the tunnel payload and only forward is the IP address
+matches a set of registered client IP address. Optionally a proxy also MAY offer this
+service only for a limited set of target addresses. In such a case the proxy SHOULD
+also inspect the destination IP address and reject packets with unknown destination
+address with an error message.
+
+## Flow Forwarding mode
+
+In flow forwarding mode the CONNECT-IP method establishes an outgoing IP flow, from the MASQUE server's
+external address to the target server's address specified by the client. The method also
+enables reception and relaying of the reverse IP flow from the target address to
+the MASQUE server to ensure that return traffic can be received by the client.
+However, it does not support flow establishment by an external server.  
+This specification supports forwarding of incoming traffic to one of the 
+clients only if an active mapping has previously been created based on an IP-CONNECT request.
+
+This mode cover the point-to-point use case and allows for flow-based optimizations.
+As the target IP address and port is provided by the client as part
+of the CONNECT-IP request and the sources address is anyway selected by the proxy,
+in this mode the palyoad does not contain the IP header as part of the
+payload between the client and proxy in order to reduce overhead.
+Other information that might be needed to construct the
 IP header or to inform the client about information from received IP packets can
-be signalled separately.
+be signalled as part of the CONNECT-IP requst or using HTTP CAPSULATE frames 
+{{!I-D.schinazi-quic-h3-datagram}} later.
 
 This proposal is based on the analysis provided in
 {{?I-D.westerlund-masque-transport-issues}} indicating that most information in
 the IP header is either IP flow related or can or even should be provided by the
 proxy as the IP communication endpoint without the need for input from the client. The
 only information identified that requires client interaction is ECN {{RFC3168}}
-and ICMP {{RFC0792}} {{RFC4443}} handling. This document proposes an event-based
-handling for both, which may not provide unambiguous mapping to one specific IP
-packet that triggered the event but trades this off for lower overhead.
+and ICMP {{RFC0792}} {{RFC4443}} handling.
 
 This document uses an IP flow definition that is tighter than just source and
 destination address of the IP packet. To reduce the overhead a number of IP
@@ -111,14 +137,6 @@ behavior and traffic treatment they represent. Future use cases for DSCP, as wel
 new IPv6 extension headers or destination header options{{RFC8200}} may require
 additional signaling. Therefore, it is important that the signaling is extensible.
 
-The CONNECT-IP method establishes an outgoing IP flow, from the MASQUE server's
-external address to the target server's address specified by the client. The method also
-enable reception and relaying of the reverse IP flow from the target address to
-the MASQUE server to ensure that return traffic can be received by the client.
-This specification supports forwarding of incoming traffic to one of the 
-clients that have a QUIC tunnel connection with the proxy only if an
-active mapping has previously been created based on an IP-CONNECT request.
-
 Following the points above, this document assumes that usually one upper-layer end-to-end connection
 is associated to one CONNECT-IP request/one tunnelling association. While it would be
 possible for a client to use the same tunnelling association for multiple 
@@ -131,6 +149,37 @@ to support per-packet signalling in HTTP datagrams and DATA frames on streams to
 address this restriction, however, this would increase per-packet overhead and design
 decisions in this document where taken in order minimise byte overhead.
 
+## Motivation of IP flow model for flow forwarding
+
+The chose IP flow model is selected due to several advantages:
+
+  * Shared functionality with CONNECT-UDP: The UDP flow proxying functionality
+    of CONNECT-UDP will need to establish, store and process the same IP header
+    related fields and state. So this can be accomplished by simply removing the
+    UDP specific processing of packets.
+
+  * CONNECT-IP can establish a new IP flow in 0-RTT: No network related
+    latencies in establishing new flow.
+
+  * Minimized per packet overhead: The per packet overhead is reduced to basic
+    framing of the IP payload for each IP packet and flow identifiers.
+
+
+Disadvantages of this model are the following:
+
+  * Client server focused solution: Accepting non-solicited server-initiated
+    traffic is challenging and require MASQUE server to client signalling when
+    incoming packets are receiived at the proxy.
+
+Discussion: This IP flow model appears less suitable if one targets network
+proxying or running server functionality on the client side. However, the
+functionality specified in this documnet is anyway required for CONNECT-UDP
+and should therefore be utiilized to also reduce overhead for IP proxying.
+A potential solution to also support network proxying is to add 
+another modes for CONNECT-IP which would tunnel the complete IP header over the
+MASQUE forwarding connection. However, this puts addition requirements on the
+MASQUE server related to IP router functionality, source address validation,
+and possibly network address translation and therefore requires further discussion.
 
 ## Definitions
 
@@ -188,37 +237,6 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 document are to be interpreted as described in BCP 14 {{RFC2119}} {{RFC8174}}
 when, and only when, they appear in all capitals, as shown here.
 
-## Motivation of IP flow model
-
-The chose IP flow model is selected due to several advantages:
-
-  * Shared functionality with CONNECT-UDP: The UDP flow proxying functionality
-    of CONNECT-UDP will need to establish, store and process the same IP header
-    related fields and state. So this can be accomplished by simply removing the
-    UDP specific processing of packets.
-
-  * CONNECT-IP can establish a new IP flow in 0-RTT: No network related
-    latencies in establishing new flow.
-
-  * Minimized per packet overhead: The per packet overhead is reduced to basic
-    framing of the IP payload for each IP packet and flow identifiers.
-
-
-Disadvantages of this model are the following:
-
-  * Client server focused solution: Accepting non-solicited server-initiated
-    traffic is challenging and require MASQUE server to client signalling when
-    incoming packets are receiived at the proxy.
-
-Discussion: This IP flow model appears less suitable if one targets network
-proxying or running server functionality on the client side. However, the
-functionality specified in this documnet is anyway required for CONNECT-UDP
-and should therefore be utiilized to also reduce overhead for IP proxying.
-A potential solution to also support network proxying is to add 
-another modes for CONNECT-IP which would tunnel the complete IP header over the
-MASQUE forwarding connection. However, this puts addition requirements on the
-MASQUE server related to IP router functionality, source address validation,
-and possibly network address translation and therefore requires further discussion.
 
 # The CONNECT-IP method {#connect-ip-method}
 
@@ -241,9 +259,11 @@ follows:
 
 *  The ":scheme" and ":path" pseudo-header fields are omitted
 
-*  The ":authority" pseudo-header field contains the host and port to
-   connect to (equivalent to the authority-form of the request-target
-   of CONNECT requests; see Section 3.2.3 of {{!I-D.ietf-httpbis-messaging}})
+*  The ":authority" pseudo-header field contains either the host and port to
+   connect to (equivalent to the authority-form of the request-target of
+   CONNECT-UDP {{I-D.schinazi-masque-connect-udp}}
+   or CONNECT requests; see Section 3.2.3 of {{!I-D.ietf-httpbis-messaging}})
+   or the host and port of the proxy if tunnel mode is requested 
 
 A CONNECT request that does not conform to these restrictions is malformed; see
 Section 4.1.3 of {{!I-D.ietf-quic-http}}.
