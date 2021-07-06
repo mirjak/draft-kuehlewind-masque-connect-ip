@@ -12,14 +12,14 @@
 <meta content="
        This draft specifies a new HTTP/3 method CONNECT-IP to proxy IP traffic.
 CONNECT-IP can be used to convert a QUIC stream into a tunnel or initialise an
-HTTP datagram association to a forwarding proxy.  CONNECT-IP supports two modes:
-a pure tunneling mode where packets are forwarded without modifications and flow
-forwarding mode which supports optimiation for individual IP flows forwarded to
-decicated target servers.  To request tunnelin or forwarding, a client connects
-to a proxy server by initiating a HTTP/3 connection and sends a CONNECT-IP which
-either indicates the address of the proxy or the target server. The proxy then
-forwards payload received on that stream or in an HTTP datagram with a certain
-flow ID. 
+HTTP datagram association to a forwarding proxy. 
+CONNECT-IP supports two modes: a pure tunneling mode where packets are forwarded
+without modifications and flow forwarding mode which supports optimiation
+for individual IP flows forwarded to decicated target servers.
+To request tunnelin or forwarding, a client connects to a proxy
+server by initiating a HTTP/3 connection and sends a CONNECT-IP which either indicates the
+address of the proxy or the target server. The proxy then forwards payload received on
+that stream or in an HTTP datagram with a certain flow ID. 
     " name="description">
 <meta content="xml2rfc 3.9.1" name="generator">
 <meta content="draft-kuehlewind-masque-connect-ip-latest" name="ietf.draft">
@@ -1066,14 +1066,14 @@ address div.right {
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
 <p id="section-abstract-1">This draft specifies a new HTTP/3 method CONNECT-IP to proxy IP traffic.
 CONNECT-IP can be used to convert a QUIC stream into a tunnel or initialise an
-HTTP datagram association to a forwarding proxy.  CONNECT-IP supports two modes:
-a pure tunneling mode where packets are forwarded without modifications and flow
-forwarding mode which supports optimiation for individual IP flows forwarded to
-decicated target servers.  To request tunnelin or forwarding, a client connects
-to a proxy server by initiating a HTTP/3 connection and sends a CONNECT-IP which
-either indicates the address of the proxy or the target server. The proxy then
-forwards payload received on that stream or in an HTTP datagram with a certain
-flow ID.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+HTTP datagram association to a forwarding proxy. 
+CONNECT-IP supports two modes: a pure tunneling mode where packets are forwarded
+without modifications and flow forwarding mode which supports optimiation
+for individual IP flows forwarded to decicated target servers.
+To request tunnelin or forwarding, a client connects to a proxy
+server by initiating a HTTP/3 connection and sends a CONNECT-IP which either indicates the
+address of the proxy or the target server. The proxy then forwards payload received on
+that stream or in an HTTP datagram with a certain flow ID.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
 </section>
 <section class="note rfcEditorRemove" id="section-note.1">
       <h2 id="name-discussion-venues">
@@ -1133,111 +1133,118 @@ flow ID.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
         <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
 <a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
         </h2>
-<nav class="toc"><ul class="ulEmpty compact ulBare toc">
-<li class="ulEmpty compact ulBare toc" id="section-toc.1-1.1">
+<nav class="toc"><ul class="ulEmpty ulBare toc compact">
+<li class="ulEmpty ulBare toc compact" id="section-toc.1-1.1">
             <p id="section-toc.1-1.1.1"><a href="#section-1" class="xref">1</a>.  <a href="#name-introduction" class="xref">Introduction</a></p>
-<ul class="ulBare toc ulEmpty compact">
-<li class="ulBare toc ulEmpty compact" id="section-toc.1-1.1.2.1">
+<ul class="compact ulBare ulEmpty toc">
+<li class="compact ulBare ulEmpty toc" id="section-toc.1-1.1.2.1">
                 <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="xref">1.1</a>.  <a href="#name-tunnel-mode" class="xref">Tunnel mode</a></p>
 </li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.1.2.2">
+              <li class="compact ulBare ulEmpty toc" id="section-toc.1-1.1.2.2">
                 <p id="section-toc.1-1.1.2.2.1" class="keepWithNext"><a href="#section-1.2" class="xref">1.2</a>.  <a href="#name-flow-forwarding-mode" class="xref">Flow Forwarding mode</a></p>
+<ul class="compact ulBare ulEmpty toc">
+<li class="compact ulBare ulEmpty toc" id="section-toc.1-1.1.2.2.2.1">
+                    <p id="section-toc.1-1.1.2.2.2.1.1" class="keepWithNext"><a href="#section-1.2.1" class="xref">1.2.1</a>.  <a href="#name-motivation-of-ip-flow-model" class="xref">Motivation of IP flow model for flow forwarding</a></p>
 </li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.1.2.3">
-                <p id="section-toc.1-1.1.2.3.1" class="keepWithNext"><a href="#section-1.3" class="xref">1.3</a>.  <a href="#name-motivation-of-ip-flow-model" class="xref">Motivation of IP flow model for flow forwarding</a></p>
+                </ul>
 </li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.1.2.4">
-                <p id="section-toc.1-1.1.2.4.1"><a href="#section-1.4" class="xref">1.4</a>.  <a href="#name-definitions" class="xref">Definitions</a></p>
+              <li class="compact ulBare ulEmpty toc" id="section-toc.1-1.1.2.3">
+                <p id="section-toc.1-1.1.2.3.1"><a href="#section-1.3" class="xref">1.3</a>.  <a href="#name-definitions" class="xref">Definitions</a></p>
 </li>
             </ul>
 </li>
-          <li class="ulEmpty compact ulBare toc" id="section-toc.1-1.2">
+          <li class="ulEmpty ulBare toc compact" id="section-toc.1-1.2">
             <p id="section-toc.1-1.2.1"><a href="#section-2" class="xref">2</a>.  <a href="#name-the-connect-ip-method" class="xref">The CONNECT-IP method</a></p>
-<ul class="ulBare toc ulEmpty compact">
-<li class="ulBare toc ulEmpty compact" id="section-toc.1-1.2.2.1">
-                <p id="section-toc.1-1.2.2.1.1"><a href="#section-2.1" class="xref">2.1</a>.  <a href="#name-stream-based-mode" class="xref">Stream-based mode</a></p>
+<ul class="compact ulBare ulEmpty toc">
+<li class="compact ulBare ulEmpty toc" id="section-toc.1-1.2.2.1">
+                <p id="section-toc.1-1.2.2.1.1"><a href="#section-2.1" class="xref">2.1</a>.  <a href="#name-stream-based-forwarding" class="xref">Stream-based forwarding</a></p>
 </li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.2.2.2">
-                <p id="section-toc.1-1.2.2.2.1"><a href="#section-2.2" class="xref">2.2</a>.  <a href="#name-datagram-based-mode" class="xref">Datagram-based mode</a></p>
-</li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.2.2.3">
-                <p id="section-toc.1-1.2.2.3.1"><a href="#section-2.3" class="xref">2.3</a>.  <a href="#name-ip-protocol-header-for-conn" class="xref">IP-Protocol Header for CONNECT-IP</a></p>
-</li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.2.2.4">
-                <p id="section-toc.1-1.2.2.4.1"><a href="#section-2.4" class="xref">2.4</a>.  <a href="#name-conn-id-header-for-connect-" class="xref">Conn-ID Header for CONNECT-IP</a></p>
+              <li class="compact ulBare ulEmpty toc" id="section-toc.1-1.2.2.2">
+                <p id="section-toc.1-1.2.2.2.1"><a href="#section-2.2" class="xref">2.2</a>.  <a href="#name-datagram-based-fowarding" class="xref">Datagram-based fowarding</a></p>
 </li>
             </ul>
 </li>
-          <li class="ulEmpty compact ulBare toc" id="section-toc.1-1.3">
-            <p id="section-toc.1-1.3.1"><a href="#section-3" class="xref">3</a>.  <a href="#name-client-behavior" class="xref">Client behavior</a></p>
+          <li class="ulEmpty ulBare toc compact" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="xref">3</a>.  <a href="#name-requesting-flow-forwarding" class="xref">Requesting flow forwarding</a></p>
+<ul class="compact ulBare ulEmpty toc">
+<li class="compact ulBare ulEmpty toc" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="xref">3.1</a>.  <a href="#name-ip-protocol-header-for-conn" class="xref">IP-Protocol Header for CONNECT-IP</a></p>
 </li>
-          <li class="ulEmpty compact ulBare toc" id="section-toc.1-1.4">
-            <p id="section-toc.1-1.4.1"><a href="#section-4" class="xref">4</a>.  <a href="#name-masque-server-behavior" class="xref">MASQUE server behavior</a></p>
-<ul class="ulBare toc ulEmpty compact">
-<li class="ulBare toc ulEmpty compact" id="section-toc.1-1.4.2.1">
-                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="xref">4.1</a>.  <a href="#name-error-handling" class="xref">Error handling</a></p>
-</li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.4.2.2">
-                <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="xref">4.2</a>.  <a href="#name-ip-address-selection-and-na" class="xref">IP address selection and NAT</a></p>
-</li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.4.2.3">
-                <p id="section-toc.1-1.4.2.3.1"><a href="#section-4.3" class="xref">4.3</a>.  <a href="#name-constructing-the-ip-header" class="xref">Constructing the IP header</a></p>
-</li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.4.2.4">
-                <p id="section-toc.1-1.4.2.4.1"><a href="#section-4.4" class="xref">4.4</a>.  <a href="#name-receiving-an-ip-packet" class="xref">Receiving an IP packet</a></p>
+              <li class="compact ulBare ulEmpty toc" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="xref">3.2</a>.  <a href="#name-conn-id-header-for-connect-" class="xref">Conn-ID Header for CONNECT-IP</a></p>
 </li>
             </ul>
 </li>
-          <li class="ulEmpty compact ulBare toc" id="section-toc.1-1.5">
-            <p id="section-toc.1-1.5.1"><a href="#section-5" class="xref">5</a>.  <a href="#name-masque-signalling" class="xref">MASQUE signalling</a></p>
-<ul class="ulBare toc ulEmpty compact">
-<li class="ulBare toc ulEmpty compact" id="section-toc.1-1.5.2.1">
-                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="xref">5.1</a>.  <a href="#name-config-file" class="xref">Config file</a></p>
+          <li class="ulEmpty ulBare toc compact" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="xref">4</a>.  <a href="#name-requesting-tunnel-mode" class="xref">Requesting Tunnel mode</a></p>
 </li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.5.2.2">
-                <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="xref">5.2</a>.  <a href="#name-ecn" class="xref">ECN</a></p>
+          <li class="ulEmpty ulBare toc compact" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="xref">5</a>.  <a href="#name-masque-server-behavior" class="xref">MASQUE server behavior</a></p>
+<ul class="compact ulBare ulEmpty toc">
+<li class="compact ulBare ulEmpty toc" id="section-toc.1-1.5.2.1">
+                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="xref">5.1</a>.  <a href="#name-error-handling" class="xref">Error handling</a></p>
 </li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.5.2.3">
-                <p id="section-toc.1-1.5.2.3.1"><a href="#section-5.3" class="xref">5.3</a>.  <a href="#name-icmp-handling" class="xref">ICMP handling</a></p>
+              <li class="compact ulBare ulEmpty toc" id="section-toc.1-1.5.2.2">
+                <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="xref">5.2</a>.  <a href="#name-ip-address-selection-and-na" class="xref">IP address selection and NAT</a></p>
 </li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.5.2.4">
-                <p id="section-toc.1-1.5.2.4.1"><a href="#section-5.4" class="xref">5.4</a>.  <a href="#name-mtu-considerations" class="xref">MTU considerations</a></p>
+              <li class="compact ulBare ulEmpty toc" id="section-toc.1-1.5.2.3">
+                <p id="section-toc.1-1.5.2.3.1"><a href="#section-5.3" class="xref">5.3</a>.  <a href="#name-constructing-the-ip-header" class="xref">Constructing the IP header</a></p>
 </li>
-            </ul>
-</li>
-          <li class="ulEmpty compact ulBare toc" id="section-toc.1-1.6">
-            <p id="section-toc.1-1.6.1"><a href="#section-6" class="xref">6</a>.  <a href="#name-examples" class="xref">Examples</a></p>
-</li>
-          <li class="ulEmpty compact ulBare toc" id="section-toc.1-1.7">
-            <p id="section-toc.1-1.7.1"><a href="#section-7" class="xref">7</a>.  <a href="#name-security-considerations" class="xref">Security considerations</a></p>
-</li>
-          <li class="ulEmpty compact ulBare toc" id="section-toc.1-1.8">
-            <p id="section-toc.1-1.8.1"><a href="#section-8" class="xref">8</a>.  <a href="#name-iana-considerations" class="xref">IANA considerations</a></p>
-<ul class="ulBare toc ulEmpty compact">
-<li class="ulBare toc ulEmpty compact" id="section-toc.1-1.8.2.1">
-                <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="xref">8.1</a>.  <a href="#name-http-method" class="xref">HTTP Method</a></p>
-</li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.8.2.2">
-                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="xref">8.2</a>.  <a href="#name-http-header" class="xref">HTTP Header</a></p>
+              <li class="compact ulBare ulEmpty toc" id="section-toc.1-1.5.2.4">
+                <p id="section-toc.1-1.5.2.4.1"><a href="#section-5.4" class="xref">5.4</a>.  <a href="#name-receiving-an-ip-packet" class="xref">Receiving an IP packet</a></p>
 </li>
             </ul>
 </li>
-          <li class="ulEmpty compact ulBare toc" id="section-toc.1-1.9">
-            <p id="section-toc.1-1.9.1"><a href="#section-9" class="xref"></a><a href="#name-acknowledgments" class="xref">Acknowledgments</a></p>
+          <li class="ulEmpty ulBare toc compact" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="xref">6</a>.  <a href="#name-masque-signalling" class="xref">MASQUE signalling</a></p>
+<ul class="compact ulBare ulEmpty toc">
+<li class="compact ulBare ulEmpty toc" id="section-toc.1-1.6.2.1">
+                <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="xref">6.1</a>.  <a href="#name-config-file" class="xref">Config file</a></p>
 </li>
-          <li class="ulEmpty compact ulBare toc" id="section-toc.1-1.10">
-            <p id="section-toc.1-1.10.1"><a href="#section-10" class="xref"></a><a href="#name-references" class="xref">References</a></p>
-<ul class="ulBare toc ulEmpty compact">
-<li class="ulBare toc ulEmpty compact" id="section-toc.1-1.10.2.1">
-                <p id="section-toc.1-1.10.2.1.1"><a href="#section-10.1" class="xref"></a><a href="#name-normative-references" class="xref">Normative References</a></p>
+              <li class="compact ulBare ulEmpty toc" id="section-toc.1-1.6.2.2">
+                <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="xref">6.2</a>.  <a href="#name-ecn" class="xref">ECN</a></p>
 </li>
-              <li class="ulBare toc ulEmpty compact" id="section-toc.1-1.10.2.2">
-                <p id="section-toc.1-1.10.2.2.1"><a href="#section-10.2" class="xref"></a><a href="#name-informative-references" class="xref">Informative References</a></p>
+              <li class="compact ulBare ulEmpty toc" id="section-toc.1-1.6.2.3">
+                <p id="section-toc.1-1.6.2.3.1"><a href="#section-6.3" class="xref">6.3</a>.  <a href="#name-icmp-handling" class="xref">ICMP handling</a></p>
+</li>
+              <li class="compact ulBare ulEmpty toc" id="section-toc.1-1.6.2.4">
+                <p id="section-toc.1-1.6.2.4.1"><a href="#section-6.4" class="xref">6.4</a>.  <a href="#name-mtu-considerations" class="xref">MTU considerations</a></p>
 </li>
             </ul>
 </li>
-          <li class="ulEmpty compact ulBare toc" id="section-toc.1-1.11">
-            <p id="section-toc.1-1.11.1"><a href="#appendix-A" class="xref"></a><a href="#name-authors-addresses" class="xref">Authors' Addresses</a></p>
+          <li class="ulEmpty ulBare toc compact" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="xref">7</a>.  <a href="#name-examples" class="xref">Examples</a></p>
+</li>
+          <li class="ulEmpty ulBare toc compact" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="xref">8</a>.  <a href="#name-security-considerations" class="xref">Security considerations</a></p>
+</li>
+          <li class="ulEmpty ulBare toc compact" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-9" class="xref">9</a>.  <a href="#name-iana-considerations" class="xref">IANA considerations</a></p>
+<ul class="compact ulBare ulEmpty toc">
+<li class="compact ulBare ulEmpty toc" id="section-toc.1-1.9.2.1">
+                <p id="section-toc.1-1.9.2.1.1"><a href="#section-9.1" class="xref">9.1</a>.  <a href="#name-http-method" class="xref">HTTP Method</a></p>
+</li>
+              <li class="compact ulBare ulEmpty toc" id="section-toc.1-1.9.2.2">
+                <p id="section-toc.1-1.9.2.2.1"><a href="#section-9.2" class="xref">9.2</a>.  <a href="#name-http-header" class="xref">HTTP Header</a></p>
+</li>
+            </ul>
+</li>
+          <li class="ulEmpty ulBare toc compact" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#section-10" class="xref"></a><a href="#name-acknowledgments" class="xref">Acknowledgments</a></p>
+</li>
+          <li class="ulEmpty ulBare toc compact" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#section-11" class="xref"></a><a href="#name-references" class="xref">References</a></p>
+<ul class="compact ulBare ulEmpty toc">
+<li class="compact ulBare ulEmpty toc" id="section-toc.1-1.11.2.1">
+                <p id="section-toc.1-1.11.2.1.1"><a href="#section-11.1" class="xref"></a><a href="#name-normative-references" class="xref">Normative References</a></p>
+</li>
+              <li class="compact ulBare ulEmpty toc" id="section-toc.1-1.11.2.2">
+                <p id="section-toc.1-1.11.2.2.1"><a href="#section-11.2" class="xref"></a><a href="#name-informative-references" class="xref">Informative References</a></p>
+</li>
+            </ul>
+</li>
+          <li class="ulEmpty ulBare toc compact" id="section-toc.1-1.12">
+            <p id="section-toc.1-1.12.1"><a href="#appendix-A" class="xref"></a><a href="#name-authors-addresses" class="xref">Authors' Addresses</a></p>
 </li>
         </ul>
 </nav>
@@ -1258,17 +1265,16 @@ HTTP/3.<a href="#section-1-1" class="pilcrow">¶</a></p>
         </h3>
 <p id="section-1.1-1">In tunnel mode the ":authority" pseudo-header field of the CONNECT-IP request
 contain the host and listing port of the proxy itself. In this mode the proxy
-just blindly forwards all payload on it outfacing interface without any
-modification and also forwards all incoming traffic to registered clients as
-payload within the respective tunneling associiation. However, a proxy MUST
-offer this service only for known clients and clients MUST present a valid
-authenfication certificate during connection establishment. The proxy SHOULLD
-inspect the source IP address of the IP packet in the tunnel payload and only
-forward is the IP address matches a set of registered client IP
-address. Optionally a proxy also MAY offer this service only for a limited set
-of target addresses. In such a case the proxy SHOULD also inspect the
-destination IP address and reject packets with unknown destination address with
-an error message.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
+just blindly forwards all payload on it outfacing interface without any modification
+and also forwards all incoming traffic to registered clients as
+payload within the respective tunneling associiation. However, a proxy MUST offer
+this service only for known clients and clients MUST present a valid authenfication
+certificate during connection establishment. The proxy SHOULLD inspect the source
+IP address of the IP packet in the tunnel payload and only forward is the IP address
+matches a set of registered client IP address. Optionally a proxy also MAY offer this
+service only for a limited set of target addresses. In such a case the proxy SHOULD
+also inspect the destination IP address and reject packets with unknown destination
+address with an error message.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="flow-forwarding-mode">
@@ -1276,125 +1282,109 @@ an error message.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
         <h3 id="name-flow-forwarding-mode">
 <a href="#section-1.2" class="section-number selfRef">1.2. </a><a href="#name-flow-forwarding-mode" class="section-name selfRef">Flow Forwarding mode</a>
         </h3>
-<p id="section-1.2-1">In flow forwarding mode the CONNECT-IP method establishes an outgoing IP flow,
-from the MASQUE server's external address to the target server's address
-specified by the client. The method also enables reception and relaying of the
-reverse IP flow from the target address to the MASQUE server to ensure that
-return traffic can be received by the client.  However, it does not support flow
-establishment by an external server.  This specification supports forwarding of
-incoming traffic to one of the clients only if an active mapping has previously
-been created based on an IP-CONNECT request.<a href="#section-1.2-1" class="pilcrow">¶</a></p>
-<p id="section-1.2-2">This mode cover the point-to-point use case and allows for flow-based
-optimizations.  As the target IP address and port is provided by the client as
-part of the CONNECT-IP request and the sources address is anyway selected by the
-proxy, in this mode the palyoad does not contain the IP header as part of the
-payload between the client and proxy in order to reduce overhead.  Other
-information that might be needed to construct the IP header or to inform the
-client about information from received IP packets can be signalled as part of
-the CONNECT-IP requst or using HTTP CAPSULATE frames
+<p id="section-1.2-1">In flow forwarding mode the CONNECT-IP method establishes an outgoing IP flow, from the MASQUE server's
+external address to the target server's address specified by the client. The method also
+enables reception and relaying of the reverse IP flow from the target address to
+the MASQUE server to ensure that return traffic can be received by the client.
+However, it does not support flow establishment by an external server.<br>
+This specification supports forwarding of incoming traffic to one of the 
+clients only if an active mapping has previously been created based on an IP-CONNECT request.<a href="#section-1.2-1" class="pilcrow">¶</a></p>
+<p id="section-1.2-2">This mode covers the point-to-point use case and allows for flow-based optimizations.
+As the target IP address and port is provided by the client as part
+of the CONNECT-IP request and the sources address is anyway selected by the proxy,
+in this mode the palyoad does not contain the IP header as part of the
+payload between the client and proxy in order to reduce overhead.
+Other information that might be needed to construct the
+IP header or to inform the client about information from received IP packets can
+be signalled as part of the CONNECT-IP requst or using HTTP CAPSULATE frames 
 <span>[<a href="#I-D.schinazi-quic-h3-datagram" class="xref">I-D.schinazi-quic-h3-datagram</a>]</span> later.<a href="#section-1.2-2" class="pilcrow">¶</a></p>
-<p id="section-1.2-3">This proposal is based on the analysis provided in
+<p id="section-1.2-3">As such, in flow forwarding mode usually one upper-layer end-to-end connection
+is associated to one CONNECT-IP forwarding association. While it would be
+possible for a client to use the same forwadring association for multiple 
+end-to-end connections to the same target server, as long as they all require the same
+Protocol (IPv4) / Next Header (IPv6) value, this would lead to the use of the same flow
+ID for all connections. As such this is not recommended for connection-oriented 
+transmissions.<a href="#section-1.2-3" class="pilcrow">¶</a></p>
+<p id="section-1.2-4">This proposal is based on the analysis provided in
 <span>[<a href="#I-D.westerlund-masque-transport-issues" class="xref">I-D.westerlund-masque-transport-issues</a>]</span> indicating that most information in
 the IP header is either IP flow related or can or even should be provided by the
-proxy as the IP communication endpoint without the need for input from the
-client. The only information identified that requires client interaction is ECN
-<span>[<a href="#RFC3168" class="xref">RFC3168</a>]</span> and ICMP <span>[<a href="#RFC0792" class="xref">RFC0792</a>]</span> <span>[<a href="#RFC4443" class="xref">RFC4443</a>]</span> handling.<a href="#section-1.2-3" class="pilcrow">¶</a></p>
-<p id="section-1.2-4">This document uses an IP flow definition that is tighter than just source and
+proxy as the IP communication endpoint without the need for input from the client. The
+only information identified that requires client interaction is ECN <span>[<a href="#RFC3168" class="xref">RFC3168</a>]</span>
+and ICMP <span>[<a href="#RFC0792" class="xref">RFC0792</a>]</span> <span>[<a href="#RFC4443" class="xref">RFC4443</a>]</span> handling.<a href="#section-1.2-4" class="pilcrow">¶</a></p>
+<p id="section-1.2-5">Therefore, flow forwading mode uses an IP flow definition that is tighter than just source and
 destination address of the IP packet. To reduce the overhead a number of IP
 header field values that are static in the context of an upper layer protocol
-connection, e.g. when UDP or TCP are used, are associated with an MASQUE IP flow
-at creation. These fields include the Protocol (IPv4) / Next Header (IPv6), IPv6
-flow label, Diffserv Code Point (DSCP), TTL / Hop Limit, where a default value
-or locally generated value based on the CONNECT-IP context is
-sufficient. Signalling of other dedicated values may be desired in certain
-deployments, e.g for DCSP <span>[<a href="#RFC2474" class="xref">RFC2474</a>]</span>.  However, DSCP is in any case a challenge
+connection, e.g. when UDP or TCP are used, are associated with an MASQUE
+IP flow at creation. These fields
+include the Protocol (IPv4) / Next Header (IPv6), IPv6 flow label, Diffserv Code
+Point (DSCP), TTL / Hop Limit, where a default value or locally generated value
+based on the CONNECT-IP context is sufficient. Signalling of other dedicated
+values may be desired in certain deployments, e.g for DCSP <span>[<a href="#RFC2474" class="xref">RFC2474</a>]</span>.
+However, DSCP is in any case a challenge
 due to local domain dependency of the used DSCP values and the forwarding
-behavior and traffic treatment they represent. Future use cases for DSCP, as
-well as new IPv6 extension headers or destination header options<span>[<a href="#RFC8200" class="xref">RFC8200</a>]</span> may
-require additional signaling. Therefore, it is important that the signaling is
-extensible.<a href="#section-1.2-4" class="pilcrow">¶</a></p>
-<p id="section-1.2-5">Following the points above, this document assumes that usually one upper-layer
-end-to-end connection is associated to one CONNECT-IP request/one tunnelling
-association. While it would be possible for a client to use the same tunnelling
-association for multiple end-to-end connections to the same target server, as
-long as they all require the same Protocol (IPv4) / Next Header (IPv6) value,
-this would lead to the use of the same flow ID for all connections and
-complicate the use of ECN as feedback cannot be associated with a single
-packet/connection. As such this is not recommended for connection-oriented
-transmissions. Alternatively, the proposed approach in this document could be
-extended to support per-packet signalling in HTTP datagrams and DATA frames on
-streams to address this restriction, however, this would increase per-packet
-overhead and design decisions in this document where taken in order minimise
-byte overhead.<a href="#section-1.2-5" class="pilcrow">¶</a></p>
-</section>
-</div>
+behavior and traffic treatment they represent. Future use cases for DSCP, as well as 
+new IPv6 extension headers or destination header options <span>[<a href="#RFC8200" class="xref">RFC8200</a>]</span> may require
+additional signaling. Therefore, it is important that the signaling is extensible.<a href="#section-1.2-5" class="pilcrow">¶</a></p>
 <div id="motivation-of-ip-flow-model-for-flow-forwarding">
-<section id="section-1.3">
-        <h3 id="name-motivation-of-ip-flow-model">
-<a href="#section-1.3" class="section-number selfRef">1.3. </a><a href="#name-motivation-of-ip-flow-model" class="section-name selfRef">Motivation of IP flow model for flow forwarding</a>
-        </h3>
-<p id="section-1.3-1">The chose IP flow model is selected due to several advantages:<a href="#section-1.3-1" class="pilcrow">¶</a></p>
+<section id="section-1.2.1">
+          <h4 id="name-motivation-of-ip-flow-model">
+<a href="#section-1.2.1" class="section-number selfRef">1.2.1. </a><a href="#name-motivation-of-ip-flow-model" class="section-name selfRef">Motivation of IP flow model for flow forwarding</a>
+          </h4>
+<p id="section-1.2.1-1">The chosen IP flow model is selected due to several advantages:<a href="#section-1.2.1-1" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-1.3-2.1">Shared functionality with CONNECT-UDP: The UDP flow proxying functionality
+<li class="normal" id="section-1.2.1-2.1">Minimized per packet overhead: The per packet overhead is reduced to basic
+framing of the IP payload for each IP packet and flow identifiers.<a href="#section-1.2.1-2.1" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-1.2.1-2.2">Shared functionality with CONNECT-UDP: The UDP flow proxying functionality
 of CONNECT-UDP will need to establish, store and process the same IP header
 related fields and state. So this can be accomplished by simply removing the
-UDP specific processing of packets.<a href="#section-1.3-2.1" class="pilcrow">¶</a>
+UDP specific processing of packets.<a href="#section-1.2.1-2.2" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-1.3-2.2">CONNECT-IP can establish a new IP flow in 0-RTT: No network related
-latencies in establishing new flow.<a href="#section-1.3-2.2" class="pilcrow">¶</a>
+            <li class="normal" id="section-1.2.1-2.3">CONNECT-IP can establish a new IP flow in 0-RTT: No network related
+latencies in establishing new flow.<a href="#section-1.2.1-2.3" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-1.3-2.3">Minimized per packet overhead: The per packet overhead is reduced to basic
-framing of the IP payload for each IP packet and flow identifiers.<a href="#section-1.3-2.3" class="pilcrow">¶</a>
-</li>
-        </ul>
-<p id="section-1.3-3">Disadvantages of this model are the following:<a href="#section-1.3-3" class="pilcrow">¶</a></p>
+          </ul>
+<p id="section-1.2.1-3">Disadvantages of this model are the following:<a href="#section-1.2.1-3" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-1.3-4.1">Client server focused solution: Accepting non-solicited server-initiated
+<li class="normal" id="section-1.2.1-4.1">Client server focused solution: Accepting non-solicited server-initiated
 traffic is challenging and require MASQUE server to client signalling when
-incoming packets are receiived at the proxy.<a href="#section-1.3-4.1" class="pilcrow">¶</a>
+incoming packets are receiived at the proxy.<a href="#section-1.2.1-4.1" class="pilcrow">¶</a>
 </li>
-        </ul>
-<p id="section-1.3-5">Discussion: This IP flow model appears less suitable if one targets network
-proxying or running server functionality on the client side. However, the
-functionality specified in this documnet is anyway required for CONNECT-UDP and
-should therefore be utiilized to also reduce overhead for IP proxying.  A
-potential solution to also support network proxying is to add another modes for
-CONNECT-IP which would tunnel the complete IP header over the MASQUE forwarding
-connection. However, this puts addition requirements on the MASQUE server
-related to IP router functionality, source address validation, and possibly
-network address translation and therefore requires further discussion.<a href="#section-1.3-5" class="pilcrow">¶</a></p>
+          </ul>
+</section>
+</div>
 </section>
 </div>
 <div id="definitions">
-<section id="section-1.4">
+<section id="section-1.3">
         <h3 id="name-definitions">
-<a href="#section-1.4" class="section-number selfRef">1.4. </a><a href="#name-definitions" class="section-name selfRef">Definitions</a>
+<a href="#section-1.3" class="section-number selfRef">1.3. </a><a href="#name-definitions" class="section-name selfRef">Definitions</a>
         </h3>
 <ul class="normal">
-<li class="normal" id="section-1.4-1.1">Proxy: This document uses proxy as synonym for the MASQUE Server
-or an HTTP proxy, depending on context.<a href="#section-1.4-1.1" class="pilcrow">¶</a>
+<li class="normal" id="section-1.3-1.1">Proxy: This document uses proxy as synonym for the MASQUE Server
+or an HTTP proxy, depending on context.<a href="#section-1.3-1.1" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-1.4-1.2">Client: The endpoint initiating a MASQUE tunnel and IP relaying
-with the proxy.<a href="#section-1.4-1.2" class="pilcrow">¶</a>
+          <li class="normal" id="section-1.3-1.2">Client: The endpoint initiating a MASQUE tunnel and IP relaying
+with the proxy.<a href="#section-1.3-1.2" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-1.4-1.3">Target host: A remote endpoint the client wishes to establish
-bi-directional communication with via tunnelling over the proxy.<a href="#section-1.4-1.3" class="pilcrow">¶</a>
+          <li class="normal" id="section-1.3-1.3">Target host: A remote endpoint the client wishes to establish
+bi-directional communication with via tunnelling over the proxy.<a href="#section-1.3-1.3" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-1.4-1.4">IP proxying: A proxy forwarding IP payloads to a target for an IP
+          <li class="normal" id="section-1.3-1.4">IP proxying: A proxy forwarding IP payloads to a target for an IP
 flow. Data is decapsulate at the proxy and amended by a IP header
 before forwarding to the target. Packet boundaries need to be
-preserved or signalled between the client and proxy.<a href="#section-1.4-1.4" class="pilcrow">¶</a>
+preserved or signalled between the client and proxy.<a href="#section-1.3-1.4" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-1.4-1.5">IP flow: A flow of IP packets between two hosts as identified by
+          <li class="normal" id="section-1.3-1.5">IP flow: A flow of IP packets between two hosts as identified by
 their IP addresses, and where all the packets share some
 properties. These properties include source/destination address,
 protocol / next header field, flow label (IPv6 only), and DSCP
-per direction.<a href="#section-1.4-1.5" class="pilcrow">¶</a>
+per direction.<a href="#section-1.3-1.5" class="pilcrow">¶</a>
 </li>
         </ul>
 <span id="name-the-nodes-and-their-address"></span><div id="fig-node-model">
 <figure id="figure-1">
-          <div class="artwork art-text alignLeft" id="section-1.4-2.1">
+          <div class="artwork art-text alignLeft" id="section-1.3-2.1">
 <pre>
 Address = IP address
 
@@ -1415,20 +1405,20 @@ Address = IP address
 <a href="#name-the-nodes-and-their-address" class="selfRef">The nodes and their addresses</a>
           </figcaption></figure>
 </div>
-<p id="section-1.4-3"><a href="#fig-node-model" class="xref">Figure 1</a> provides an overview figure of the involved nodes,
+<p id="section-1.3-3"><a href="#fig-node-model" class="xref">Figure 1</a> provides an overview figure of the involved nodes,
 i.e. client, proxy, and target host. There are also two network paths.  Path #1
 is the client to proxy path, where IP proxying is provided over an HTTP/3
 session, usually over QUIC, to tunnel IP flow(s).  Path #2 is the path between
-the proxy and the target.<a href="#section-1.4-3" class="pilcrow">¶</a></p>
-<p id="section-1.4-4">The client will use the proxy's service address to establish a transport
+the proxy and the target.<a href="#section-1.3-3" class="pilcrow">¶</a></p>
+<p id="section-1.3-4">The client will use the proxy's service address to establish a transport
 connection on which to request IP proxying using HTTP/3 CONNECT-IP.  The proxy
 will then relay the client's IP flows to the target host.  The IP header from
 the proxy to the target carries the proxy's external address as source address
-and the target's address as destination address.<a href="#section-1.4-4" class="pilcrow">¶</a></p>
-<p id="section-1.4-5">The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
+and the target's address as destination address.<a href="#section-1.3-4" class="pilcrow">¶</a></p>
+<p id="section-1.3-5">The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in BCP 14 <span>[<a href="#RFC2119" class="xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="xref">RFC8174</a>]</span>
-when, and only when, they appear in all capitals, as shown here.<a href="#section-1.4-5" class="pilcrow">¶</a></p>
+when, and only when, they appear in all capitals, as shown here.<a href="#section-1.3-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1441,12 +1431,12 @@ when, and only when, they appear in all capitals, as shown here.<a href="#sectio
 <p id="section-2-1">This document defines a new HTTP/3 <span>[<a href="#I-D.ietf-quic-http" class="xref">I-D.ietf-quic-http</a>]</span> method CONNECT-IP to
 convert streams into tunnels or initialise HTTP datagram flows
 <span>[<a href="#I-D.schinazi-quic-h3-datagram" class="xref">I-D.schinazi-quic-h3-datagram</a>]</span> to a forwarding proxy.  Each stream can be
-used separately to establish forwarding of one connection to potentially
-different remote hosts. Unlike the HTTP CONNECT method, CONNECT-IP does not
-request the forwarding proxy to establish a TCP connection to the remote target
-host. Instead the tunnel payload will be forwarded right on top of the IP layer,
-meaning the forwarding proxy has to identify messages boundaries and then adds
-an IP header to each message before forwarding (see section <a href="#server" class="xref">Section 4</a>).<a href="#section-2-1" class="pilcrow">¶</a></p>
+used separately to establish forwarding to potentially
+different remote hosts. Unlike the HTTP CONNECT method, CONNECT-IP
+does not request the proxy to establish a TCP connection to the
+remote target host. Instead the tunnel payload will be forwarded right on top of
+the IP layer, meaning the forwarding proxy has to identify messages boundaries
+to each message before forwarding (see section <a href="#server" class="xref">Section 5</a>).<a href="#section-2-1" class="pilcrow">¶</a></p>
 <p id="section-2-2">This document specifies CONNECT-IP only for HTTP/3 following the same semantics
 as the CONNECT method. As such a CONNECT-IP request MUST be constructed as
 follows:<a href="#section-2-2" class="pilcrow">¶</a></p>
@@ -1464,338 +1454,347 @@ or the host and port of the proxy if tunnel mode is requested<a href="#section-2
       </ul>
 <p id="section-2-4">A CONNECT request that does not conform to these restrictions is malformed; see
 Section 4.1.3 of <span>[<a href="#I-D.ietf-quic-http" class="xref">I-D.ietf-quic-http</a>]</span>.<a href="#section-2-4" class="pilcrow">¶</a></p>
-<p id="section-2-5">The forwarding stays active as long as the respective stream is open. Forwarding
-can be either be realised by sending data on that stream together with an
-indication of message length (see <a href="#stream" class="xref">Section 2.1</a>) or use of HTTP/3 datagrams
-<span>[<a href="#I-D.schinazi-quic-h3-datagram" class="xref">I-D.schinazi-quic-h3-datagram</a>]</span> where the payload of one frame is mapped to
-one IP packet (see <a href="#datagram" class="xref">Section 2.2</a>).<a href="#section-2-5" class="pilcrow">¶</a></p>
+<p id="section-2-5">Different to the TCP-based CONNECT, CONNECT-IP does not trigger a
+connection establishment process from the proxy to the target host. Therefore,
+the client does not need to wait for an HTTP response in order to send
+forwarding data. However, the client, especially on tunnel mode, SHOULD
+limit the amount of traffic sent to the proxy before a 2xx (Successful) response
+is received.<a href="#section-2-5" class="pilcrow">¶</a></p>
+<p id="section-2-6">The forwarding stays active as long as the respective stream is open. 
+Forwarding data can either directly on the same HTTP stream as the
+CONNECT-IP request (see Section <a href="#stream" class="xref">Section 2.1</a>), or an HTTP datagram
+encapsulated in a QUIC datagram can be sent (see Section <a href="#datagram" class="xref">Section 2.2</a>),
+even in the same QUIC packet. To request use of the datagram support,
+the CONNECT-IP request MUST indicate the datagram flow ID in the
+Datagram-Flow-Id Header.<a href="#section-2-6" class="pilcrow">¶</a></p>
+<p id="section-2-7">QUESTION: datagram flow IDs are allocated by a flow id allocation service at the
+server in <span>[<a href="#I-D.schinazi-quic-h3-datagram" class="xref">I-D.schinazi-quic-h3-datagram</a>]</span>. However, with CONNECT-IP you can
+always send your first message directly on the same stream right after the
+CONNECT-IP request and sever could provide you a flow ID together with a "2xx"
+response to the CONNECT-IP request. Wouldn't that be easier and faster?<a href="#section-2-7" class="pilcrow">¶</a></p>
 <div id="stream">
 <section id="section-2.1">
-        <h3 id="name-stream-based-mode">
-<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-stream-based-mode" class="section-name selfRef">Stream-based mode</a>
+        <h3 id="name-stream-based-forwarding">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-stream-based-forwarding" class="section-name selfRef">Stream-based forwarding</a>
         </h3>
-<p id="section-2.1-1">Once the CONNECT-IP method has completed, only DATA frames are permitted to be
-sent on that stream. Extension frames MAY be used if specifically permitted by
+<p id="section-2.1-1">Once the CONNECT-IP method has completed, only DATA and CAPSULATE <span>[<a href="#I-D.schinazi-quic-h3-datagram" class="xref">I-D.schinazi-quic-h3-datagram</a>]</span>
+frames are permitted to be sent on that stream.
+Extension frames MAY be used if specifically permitted by
 the definition of the extension.  Receipt of any other known frame type MUST be
 treated as a connection error of type H3_FRAME_UNEXPECTED.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
-<p id="section-2.1-2">Each HTTP DATA frame MUST to contain the payload of one IP packet.<a href="#section-2.1-2" class="pilcrow">¶</a></p>
-<p id="section-2.1-3">Stream based mode provides in-order and reliable delivery but may introduce Head
-of Line (HoL) Blocking if independent messages are send in the IP payload.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
+<p id="section-2.1-2">Each HTTP DATA frame MUST contain the either a full IP packet or only 
+payload of one IP packet depending on the requested forwadring mode.<a href="#section-2.1-2" class="pilcrow">¶</a></p>
+<p id="section-2.1-3">Stream based forwadring provides in-order and reliable delivery but may introduce Head
+of Line (HoL) Blocking if independent messages are send over the same CONNECT-IP
+association.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="datagram">
 <section id="section-2.2">
-        <h3 id="name-datagram-based-mode">
-<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-datagram-based-mode" class="section-name selfRef">Datagram-based mode</a>
+        <h3 id="name-datagram-based-fowarding">
+<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-datagram-based-fowarding" class="section-name selfRef">Datagram-based fowarding</a>
         </h3>
-<p id="section-2.2-1">The client can, in addition to stream mode, request support of datagram mode
-using HTTP/3 datagrams <span>[<a href="#I-D.schinazi-quic-h3-datagram" class="xref">I-D.schinazi-quic-h3-datagram</a>]</span> to forward IP payload.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
+<p id="section-2.2-1">The client can, in addition to stream-based forwadring, request
+use of HTTP/3 datagrams <span>[<a href="#I-D.schinazi-quic-h3-datagram" class="xref">I-D.schinazi-quic-h3-datagram</a>]</span>.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
 <p id="section-2.2-2">To request datagram support the client adds an Datagram-Flow-Id Header to the
 CONNECT-IP request as specified for CONNECT-UDP in
-<span>[<a href="#I-D.schinazi-masque-connect-udp" class="xref">I-D.schinazi-masque-connect-udp</a>]</span>.  Datagram mode MUST only be requested when
-the QUIC datagram extension <span>[<a href="#I-D.ietf-quic-datagram" class="xref">I-D.ietf-quic-datagram</a>]</span> was successfully
-negotiated during the QUIC handshake.<a href="#section-2.2-2" class="pilcrow">¶</a></p>
-<p id="section-2.2-3">Datagram mode provides un-order and unreliable delivery. In theory both, stream
-as well as datagram mode, can be used in parallel, however, for most
+<span>[<a href="#I-D.schinazi-masque-connect-udp" class="xref">I-D.schinazi-masque-connect-udp</a>]</span>.  Datagram suppot MUST only be requested when
+the QUIC datagram extension <span>[<a href="#I-D.ietf-quic-datagram" class="xref">I-D.ietf-quic-datagram</a>]</span> was
+successfully negotiated during the QUIC handshake.<a href="#section-2.2-2" class="pilcrow">¶</a></p>
+<p id="section-2.2-3">Datagrams provide un-order and unreliable delivery. In theory both, stream-
+as well as datagram-based forwarding, can be used in parallel, however, for most
 transmissions it is expected to only use one.<a href="#section-2.2-3" class="pilcrow">¶</a></p>
-<p id="section-2.2-4">While IP packets sent in stream-based mode only have to respect the end-to-end
-MTU between the client and the target server, packets sent in datagram mode are
-further restricted by the QUIC packet size of the QUIC tunnel and any overhead
-within the QUIC tunnel packet. The proxy should provide MTU and overhead
-information to the client.  The client MUST take this overhead into account when
-indicating the MTU to the application.<a href="#section-2.2-4" class="pilcrow">¶</a></p>
-</section>
-</div>
-<div id="ip-protocol-header-for-connect-ip">
-<section id="section-2.3">
-        <h3 id="name-ip-protocol-header-for-conn">
-<a href="#section-2.3" class="section-number selfRef">2.3. </a><a href="#name-ip-protocol-header-for-conn" class="section-name selfRef">IP-Protocol Header for CONNECT-IP</a>
-        </h3>
-<p id="section-2.3-1">In order to construct the IP header the MASQUE server needs to fill the
-"Protocol" field in the IPv4 header or "Next header" field in the IPv6
-header. As the IP payload is otherwise mostly opaque to the MASQUE forwarding
-server, this information has to be provided by the client for each CONNECT-IP
-request. Therefore this document define a new header field that is mandatory to
-use with CONNECT-IP called "IP-Protocol".<a href="#section-2.3-1" class="pilcrow">¶</a></p>
-<p id="section-2.3-2">IP-Protocol is a Item Structured Header <span>[<a href="#I-D.ietf-httpbis-header-structure" class="xref">I-D.ietf-httpbis-header-structure</a>]</span>.
-Its value MUST be an Integer. Its ABNF is:<a href="#section-2.3-2" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-2.3-3">
-<pre>
-  IP-Protocol = sf-integer
-</pre><a href="#section-2.3-3" class="pilcrow">¶</a>
-</div>
-</section>
-</div>
-<div id="conn-id-header-for-connect-ip">
-<section id="section-2.4">
-        <h3 id="name-conn-id-header-for-connect-">
-<a href="#section-2.4" class="section-number selfRef">2.4. </a><a href="#name-conn-id-header-for-connect-" class="section-name selfRef">Conn-ID Header for CONNECT-IP</a>
-        </h3>
-<p id="section-2.4-1">This document further defines a new header field to be used with CONNECT-IP
-"Conn-ID".  The Conn-ID HTTP header field indicates the value, offset, and
-length of a field in the IP payload that can be used by the MASQUE as a
-connection identifier in addition to the IP address tuple when multiple
-connections are proxied to the same target server.<a href="#section-2.4-1" class="pilcrow">¶</a></p>
-<p id="section-2.4-2">Conn-ID is a Item Structured Header <span>[<a href="#I-D.ietf-httpbis-header-structure" class="xref">I-D.ietf-httpbis-header-structure</a>]</span>.
-Its value MUST be a Byte Sequence. Its ABNF is:<a href="#section-2.4-2" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-2.4-3">
-<pre>
-  Conn-ID = sf-binary
-</pre><a href="#section-2.4-3" class="pilcrow">¶</a>
-</div>
-<p id="section-2.4-4">The following parameters are defined:<a href="#section-2.4-4" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-2.4-5.1">A parameter whose name is "offset", and whose value is an Integer indicating
-the offset of the identifier field starting from the beginning of a datagram
-or HTTP frame on the forwarding stream.<a href="#section-2.4-5.1" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-2.4-5.2">A parameter whose name is "length", and whose value is an Integer indicating the
-length of the identifier field starting from the offset.<a href="#section-2.4-5.2" class="pilcrow">¶</a>
-</li>
-        </ul>
-<p id="section-2.4-6">Both parameters MUST be present and the header MUST be ignored if these parameter
-are not present.<a href="#section-2.4-6" class="pilcrow">¶</a></p>
-<p id="section-2.4-7">This function can be used to e.g. indicate the source port field in the IP
-payload when containing a TCP packet.<a href="#section-2.4-7" class="pilcrow">¶</a></p>
+<p id="section-2.2-4">While IP packets sent over streams only have to respect the end-to-end MTU
+between the client and the target server, packets sent in datagrams are further
+restricted by the QUIC packet size of the QUIC tunnel and any overhead within
+the QUIC tunnel packet. The proxy should provide MTU and overhead information to the client.
+The client MUST take this overhead into account when indicating the MTU to the
+application.<a href="#section-2.2-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
 </div>
 <div id="client">
 <section id="section-3">
-      <h2 id="name-client-behavior">
-<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-client-behavior" class="section-name selfRef">Client behavior</a>
+      <h2 id="name-requesting-flow-forwarding">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-requesting-flow-forwarding" class="section-name selfRef">Requesting flow forwarding</a>
       </h2>
-<p id="section-3-1">To request IP proxying, the client sends a CONNECT-IP request to the forwarding
+<p id="section-3-1">To request flow forwarding, the client sends a CONNECT-IP request to the forwarding
 proxy indicating the target host and port in the ":authority" pseudo-header
 field. The host portion is either an IP literal encapsulated within square
 brackets, an IPv4 address in dotted-decimal form, or a registered name.
-Different to the TCP-based CONNECT, CONNECT-IP does not trigger a connection
-establishment process from the proxy to the target host. Therefore, the client
-does not need to wait for an HTTP response in order to send forwarding data.<a href="#section-3-1" class="pilcrow">¶</a></p>
-<p id="section-3-2">Forwarding data can either directly on the same HTTP stream as the CONNECT-IP
-request (see Section <a href="#stream" class="xref">Section 2.1</a>), or an HTTP datagram encapsulated in a QUIC
-datagram can be sent (see Section <a href="#datagram" class="xref">Section 2.2</a>), even in the same QUIC
-packet. To request use of the datagram mode, the CONNECT-IP request MUST
-indicate the datagram flow ID in the Datagram-Flow-Id Header.<a href="#section-3-2" class="pilcrow">¶</a></p>
-<p id="section-3-3">QUESTION: datagram flow IDs are allocated by a flow id allocation service at the
-server in <span>[<a href="#I-D.schinazi-quic-h3-datagram" class="xref">I-D.schinazi-quic-h3-datagram</a>]</span>. However, with CONNECT-IP you can
-always send your first message directly on the same stream right after the
-CONNECT-IP request and sever could provide you a flow ID together with a "2xx"
-response to the CONNECT-IP request. Wouldn't that be easier and faster?<a href="#section-3-3" class="pilcrow">¶</a></p>
+Further the CONNECT-IP request MUST contain the IP-Protocol header and MAY
+contain the Conn-ID header.<a href="#section-3-1" class="pilcrow">¶</a></p>
+<div id="ip-protocol-header-for-connect-ip">
+<section id="section-3.1">
+        <h3 id="name-ip-protocol-header-for-conn">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-ip-protocol-header-for-conn" class="section-name selfRef">IP-Protocol Header for CONNECT-IP</a>
+        </h3>
+<p id="section-3.1-1">In order to construct the IP header the MASQUE server needs to fill the "Protocol" field
+in the IPv4 header or "Next header" field in the IPv6 header. As the IP payload is otherwise
+mostly opaque to the MASQUE forwarding server, this information has to be provided by
+the client for each CONNECT-IP request. Therefore this document define a new header
+field that is mandatory to use with CONNECT-IP called "IP-Protocol".<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.1-2">IP-Protocol is a Item Structured Header <span>[<a href="#I-D.ietf-httpbis-header-structure" class="xref">I-D.ietf-httpbis-header-structure</a>]</span>.
+Its value MUST be an Integer. Its ABNF is:<a href="#section-3.1-2" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.1-3">
+<pre>
+  IP-Protocol = sf-integer
+</pre><a href="#section-3.1-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="conn-id-header-for-connect-ip">
+<section id="section-3.2">
+        <h3 id="name-conn-id-header-for-connect-">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-conn-id-header-for-connect-" class="section-name selfRef">Conn-ID Header for CONNECT-IP</a>
+        </h3>
+<p id="section-3.2-1">This document further defines a new header field to be used with CONNECT-IP
+"Conn-ID".  The Conn-ID HTTP header field indicates the value, offset, and
+length of a field in the IP payload that can be used by the MASQUE as a
+connection identifier in addition to the IP address tuple when multiple
+connections are proxied to the same target server.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.2-2">Conn-ID is a Item Structured Header <span>[<a href="#I-D.ietf-httpbis-header-structure" class="xref">I-D.ietf-httpbis-header-structure</a>]</span>.
+Its value MUST be a Byte Sequence. Its ABNF is:<a href="#section-3.2-2" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.2-3">
+<pre>
+  Conn-ID = sf-binary
+</pre><a href="#section-3.2-3" class="pilcrow">¶</a>
+</div>
+<p id="section-3.2-4">The following parameters are defined:<a href="#section-3.2-4" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.2-5.1">A parameter whose name is "offset", and whose value is an Integer indicating
+the offset of the identifier field starting from the beginning of a datagram
+or HTTP frame on the forwarding stream.<a href="#section-3.2-5.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-3.2-5.2">A parameter whose name is "length", and whose value is an Integer indicating the
+length of the identifier field starting from the offset.<a href="#section-3.2-5.2" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="section-3.2-6">Both parameters MUST be present and the header MUST be ignored if these parameter
+are not present.<a href="#section-3.2-6" class="pilcrow">¶</a></p>
+<p id="section-3.2-7">This function can be used to e.g. indicate the source port field in the IP
+payload when containing a TCP packet.<a href="#section-3.2-7" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="requesting-tunnel-mode">
+<section id="section-4">
+      <h2 id="name-requesting-tunnel-mode">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-requesting-tunnel-mode" class="section-name selfRef">Requesting Tunnel mode</a>
+    </h2>
 </section>
 </div>
 <div id="server">
-<section id="section-4">
+<section id="section-5">
       <h2 id="name-masque-server-behavior">
-<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-masque-server-behavior" class="section-name selfRef">MASQUE server behavior</a>
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-masque-server-behavior" class="section-name selfRef">MASQUE server behavior</a>
       </h2>
-<p id="section-4-1">A MASQUE server that receives an IP-CONNECT request, opens a raw socket and
+<p id="section-5-1">A MASQUE server that receives an IP-CONNECT request, opens a raw socket and
 creates state to map a connection identifier, which might be a tuple, to a
 target IP address. Once this is successfully established, the proxy sends a
 HEADERS frame containing a 2xx series status code to the client. To indicate
 support of datagram mode, if requested by the client, the MASQUE server reflects
-the Datagram-Flow-Id Header from the client's request on the HTTP response.<a href="#section-4-1" class="pilcrow">¶</a></p>
-<p id="section-4-2">All DATA frames received on that stream as well as all HTTP/3 datagrams with the
+the Datagram-Flow-Id Header from the client's request on the HTTP response.<a href="#section-5-1" class="pilcrow">¶</a></p>
+<p id="section-5-2">All DATA frames received on that stream as well as all HTTP/3 datagrams with the
 specified Datagram-flow-ID are forwarded to the target server by adding an IP
-header (see section <a href="#IP-header" class="xref">Section 4.3</a> below) and sending the packet on the
-respective raw socket.<a href="#section-4-2" class="pilcrow">¶</a></p>
-<p id="section-4-3">IP packets received from the target server are mapped to an active forwarding
-connection and its payload is then respectively forwarded in an DATA frame or
-HTTP/3 datagram to the client (see section <a href="#receiving" class="xref">Section 4.4</a> below).<a href="#section-4-3" class="pilcrow">¶</a></p>
+header (see section <a href="#IP-header" class="xref">Section 5.3</a> below) and sending the packet on the respective raw socket.<a href="#section-5-2" class="pilcrow">¶</a></p>
+<p id="section-5-3">IP packets received from the target server are mapped to an active
+forwarding connection and its payload is then respectively forwarded in an DATA
+frame or HTTP/3 datagram to the client (see section <a href="#receiving" class="xref">Section 5.4</a> below).<a href="#section-5-3" class="pilcrow">¶</a></p>
 <div id="error-handling">
-<section id="section-4.1">
+<section id="section-5.1">
         <h3 id="name-error-handling">
-<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-error-handling" class="section-name selfRef">Error handling</a>
+<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-error-handling" class="section-name selfRef">Error handling</a>
         </h3>
-<p id="section-4.1-1">TBD (e.g. out of IP address, conn-id collision)<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<p id="section-5.1-1">TBD (e.g. out of IP address, conn-id collision)<a href="#section-5.1-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="ip-address-selection-and-nat">
-<section id="section-4.2">
+<section id="section-5.2">
         <h3 id="name-ip-address-selection-and-na">
-<a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-ip-address-selection-and-na" class="section-name selfRef">IP address selection and NAT</a>
+<a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-ip-address-selection-and-na" class="section-name selfRef">IP address selection and NAT</a>
         </h3>
-<p id="section-4.2-1">Since a MASQUE server adds the IP header when sending the IP payload towards the
+<p id="section-5.2-1">Since a MASQUE server adds the IP header when sending the IP payload towards the
 target server, it also select an source IP address from its pool of IP address
-that are routed to the MASQUE server.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
-<p id="section-4.2-2">If no additional information about a payload field that can be used as an
+that are routed to the MASQUE server.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.2-2">If no additional information about a payload field that can be used as an
 identifier based on Conn-ID header is provided by the client, the masque server
 uses the source/destination address 2-tuple in order to map an incoming IP
 packet to an active forwarding connection. As such the MASQUE proxy MUST select
 a source IP address that leads to a unique tuple. The same IP address can be
-used for different clients when those client connect to different target
-servers, however, this also means that potentially multiple IP address are used
-for the same client when multiple connection to one target server are
-needed. This can be problematic if the source address is used by the target
-server as an identifier.<a href="#section-4.2-2" class="pilcrow">¶</a></p>
-<p id="section-4.2-3">If the Conn-ID header is provided, the MASQUE server should use that field as an
+used for different clients when those client connect to different target servers,
+however, this also means that potentially multiple IP address are used for the
+same client when multiple connection to one target server are needed. This can
+be problematic if the source address is used by the target server as an
+identifier.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
+<p id="section-5.2-3">If the Conn-ID header is provided, the MASQUE server should use that field as an
 connection identifier together with source and destination address, as a
 3-tuple. In this case it is recommended to use a stable IP address for each
 client, while the same IP address might still be used for multiple clients, if
 not indicated differently by the client in the configuration file. Note that if
 the same IP address is used for multiple clients, this can still lead to an
 identifier collision and the IP-CONNECT request MUST be reject if such a
-collision is detect.<a href="#section-4.2-3" class="pilcrow">¶</a></p>
+collision is detect.<a href="#section-5.2-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="IP-header">
-<section id="section-4.3">
+<section id="section-5.3">
         <h3 id="name-constructing-the-ip-header">
-<a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-constructing-the-ip-header" class="section-name selfRef">Constructing the IP header</a>
+<a href="#section-5.3" class="section-number selfRef">5.3. </a><a href="#name-constructing-the-ip-header" class="section-name selfRef">Constructing the IP header</a>
         </h3>
-<p id="section-4.3-1">To retrieve the source and destination address the proxy looks up the mapping
-for the datagram flow ID or stream identifier. The IP version, flow label,
-DiffServ codepoint (DSCP), and hop limit/TTL is selected by the proxy.  The IPv4
-Protocol or IPv6 Next Header field is set based on the information provided by
-the IP-Protocol header in the CONNECT-IP request.<a href="#section-4.3-1" class="pilcrow">¶</a></p>
-<p id="section-4.3-2">MASQUE server MUST set the Don't Fragment (DF) flag in the IPv4 header. Payload
-that does not fit into one IP packet MUST be dropped. A dropping indication
-should be provided to the client. Further the MASQUE server should provide MTU
-information.<a href="#section-4.3-2" class="pilcrow">¶</a></p>
-<p id="section-4.3-3">The ECN field is by default set to non-ECN capable transport (non-ECT).  Further
-ECN handling is described in Section <a href="#ECN" class="xref">Section 5.2</a>.<a href="#section-4.3-3" class="pilcrow">¶</a></p>
+<p id="section-5.3-1">To retrieve the source and destination address the proxy looks up the
+mapping for the datagram flow ID or stream identifier. The IP version, flow
+label, DiffServ codepoint (DSCP), and hop limit/TTL is selected by the proxy.
+The IPv4 Protocol or IPv6 Next Header field is set based on the information
+provided by the IP-Protocol header in the CONNECT-IP request.<a href="#section-5.3-1" class="pilcrow">¶</a></p>
+<p id="section-5.3-2">MASQUE server MUST set the Don't Fragment (DF) flag in the IPv4 header. Payload
+that does not fit into one IP packet MUST be dropped. A dropping
+indication should be provided to the client. Further the MASQUE
+server should provide MTU information.<a href="#section-5.3-2" class="pilcrow">¶</a></p>
+<p id="section-5.3-3">The ECN field is by default set to non-ECN capable transport (non-ECT).
+Further ECN handling is described in Section <a href="#ECN" class="xref">Section 6.2</a>.<a href="#section-5.3-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="receiving">
-<section id="section-4.4">
+<section id="section-5.4">
         <h3 id="name-receiving-an-ip-packet">
-<a href="#section-4.4" class="section-number selfRef">4.4. </a><a href="#name-receiving-an-ip-packet" class="section-name selfRef">Receiving an IP packet</a>
+<a href="#section-5.4" class="section-number selfRef">5.4. </a><a href="#name-receiving-an-ip-packet" class="section-name selfRef">Receiving an IP packet</a>
         </h3>
-<p id="section-4.4-1">When the MASQUE proxy receives an incoming IP packet, it checks if the source
-and destination IP address maps to an active forwarding connection. If one or
-more mappings exists, it further checks if this mapping contains additional
+<p id="section-5.4-1">When the MASQUE proxy receives an incoming IP packet, it checks if the source
+and destination IP address maps to an active forwarding connection. If one or more
+mappings exists, it further checks if this mapping contains additional
 identifier information as provided by the Conn-ID Header of the CONNECT-IP
-request. If this field maps as well, the IP payload is forwarded to the
-client. If no active mapping is found, the IP packet is discarded.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
-<p id="section-4.4-2">The masque server should use the same forwarding mode as used by the client.  If
-both modes, datagram and stream based, are used, it is recommended to use the
-same mode as most recently used by the client or datagram mode as
-default. Alternatively, the client might indicate a preference in the
-configuration file.<a href="#section-4.4-2" class="pilcrow">¶</a></p>
+request. If this field maps as well, the IP payload is forwarded
+to the client. If no active mapping is found, the IP packet is discarded.<a href="#section-5.4-1" class="pilcrow">¶</a></p>
+<p id="section-5.4-2">The masque server should use the same
+forwarding mode as used by the client.  If both modes, datagram and stream
+based, are used, it is recommended to use the same mode as most recently used by the
+client or datagram mode as default. Alternatively, the client might indicate a
+preference in the configuration file.<a href="#section-5.4-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
 </div>
 <div id="masque-signalling">
-<section id="section-5">
+<section id="section-6">
       <h2 id="name-masque-signalling">
-<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-masque-signalling" class="section-name selfRef">MASQUE signalling</a>
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-masque-signalling" class="section-name selfRef">MASQUE signalling</a>
       </h2>
-<p id="section-5-1">One stream of the underlying QUIC connection can be used as a signalling channel
+<p id="section-6-1">One stream of the underlying QUIC connection can be used as a signalling channel
 between the client and proxy. Both the client and the masque server can send or
 request an JSON <span>[<a href="#RFC7159" class="xref">RFC7159</a>]</span> configuration file by sending an HTTP POST or GET to
 "/.well-known/masque/config". Further the masque server can PUSH status updates
 about certain forwarding streams or datagram flows, e.g. contain ECN <span>[<a href="#RFC3168" class="xref">RFC3168</a>]</span>
 counters or the outside facing IP address used for this connection, to
-"/.well-known/masque/&lt;id&gt;".<a href="#section-5-1" class="pilcrow">¶</a></p>
-<p id="section-5-2">Note: Alternative approach would be to use HTTP headers with IP-CONNECT for
+"/.well-known/masque/&lt;id&gt;".<a href="#section-6-1" class="pilcrow">¶</a></p>
+<p id="section-6-2">Note: Alternative approach would be to use HTTP headers with IP-CONNECT for
 initial negotiation and new HTTP frame format(s) to provide per-packet
-information (e.g ECN) or event-based information (e.g. ICMP).<a href="#section-5-2" class="pilcrow">¶</a></p>
+information (e.g ECN) or event-based information (e.g. ICMP).<a href="#section-6-2" class="pilcrow">¶</a></p>
 <div id="config-file">
-<section id="section-5.1">
+<section id="section-6.1">
         <h3 id="name-config-file">
-<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-config-file" class="section-name selfRef">Config file</a>
+<a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-config-file" class="section-name selfRef">Config file</a>
         </h3>
-<p id="section-5.1-1">TBD (indicate IP address handling, forwarding mode preference, MTU...)<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+<p id="section-6.1-1">TBD (indicate IP address handling, forwarding mode preference, MTU...)<a href="#section-6.1-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="ECN">
-<section id="section-5.2">
+<section id="section-6.2">
         <h3 id="name-ecn">
-<a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-ecn" class="section-name selfRef">ECN</a>
+<a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-ecn" class="section-name selfRef">ECN</a>
         </h3>
-<p id="section-5.2-1">ECN requires coordination with the end-to-end communication points as it should
-only be used if the endpoints are also capable and willing to signal congestion
+<p id="section-6.2-1">ECN requires coordination with the end-to-end communication points as it should only be
+used if the endpoints are also capable and willing to signal congestion
 notifications to the other end and react accordingly if a congestion
-notification is received.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
-<p id="section-5.2-2">Therefore, if ECN is used, the proxy needs to inform the client of a congestion
-notification (IP CE codepoint) was observed in any IP header of a received
-packet from the target server. This can be realised by maintaining an CE counter
-in the proxy and send an updated JSON stream file if the counter changes.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
-<p id="section-5.2-3">Further, clients must indicate to the proxy for each forwarding flow/stream if
+notification is received.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+<p id="section-6.2-2">Therefore, if ECN is used, the proxy needs to inform the client of a
+congestion notification (IP CE codepoint) was observed in any IP header of a
+received packet from the target server. This can be realised by maintaining an
+CE counter in the proxy and send an updated JSON stream file if the counter changes.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
+<p id="section-6.2-3">Further, clients must indicate to the proxy for each forwarding flow/stream if
 the ECT(0) or ECT(1) codepoint should be set. The client can update this during
 the lifetime of a forwarding connection, however, there is no guarantee which
 packet will be forwarded with the updated information or the old information as
 QUIC datagrams may be delivered out of order. If the IP payload is e.g. carrying
 TCP, today, ECN is only used after the handshake. But if not all data packets
 after the handshake are immediately ECT marked, this should not have a huge
-impact.<a href="#section-5.2-3" class="pilcrow">¶</a></p>
-<p id="section-5.2-4">It may be desirable for the endpoint to validate ECN usage on the path. In this
+impact.<a href="#section-6.2-3" class="pilcrow">¶</a></p>
+<p id="section-6.2-4">It may be desirable for the endpoint to validate ECN usage on the path. In this
 case validation can either be done by the proxy independently or the proxy has
 to provide not only the number or received observed CE markings but also the
-number of sent and other received markings. This need further discussion.<a href="#section-5.2-4" class="pilcrow">¶</a></p>
+number of sent and other received markings. This need further discussion.<a href="#section-6.2-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="ICMP">
-<section id="section-5.3">
+<section id="section-6.3">
         <h3 id="name-icmp-handling">
-<a href="#section-5.3" class="section-number selfRef">5.3. </a><a href="#name-icmp-handling" class="section-name selfRef">ICMP handling</a>
+<a href="#section-6.3" class="section-number selfRef">6.3. </a><a href="#name-icmp-handling" class="section-name selfRef">ICMP handling</a>
         </h3>
-<p id="section-5.3-1">TBD<a href="#section-5.3-1" class="pilcrow">¶</a></p>
+<p id="section-6.3-1">TBD<a href="#section-6.3-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="mtu-considerations">
-<section id="section-5.4">
+<section id="section-6.4">
         <h3 id="name-mtu-considerations">
-<a href="#section-5.4" class="section-number selfRef">5.4. </a><a href="#name-mtu-considerations" class="section-name selfRef">MTU considerations</a>
+<a href="#section-6.4" class="section-number selfRef">6.4. </a><a href="#name-mtu-considerations" class="section-name selfRef">MTU considerations</a>
         </h3>
-<p id="section-5.4-1">TBD<a href="#section-5.4-1" class="pilcrow">¶</a></p>
+<p id="section-6.4-1">TBD<a href="#section-6.4-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
 </div>
 <div id="examples">
-<section id="section-6">
+<section id="section-7">
       <h2 id="name-examples">
-<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-examples" class="section-name selfRef">Examples</a>
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-examples" class="section-name selfRef">Examples</a>
       </h2>
-<p id="section-6-1">TBD<a href="#section-6-1" class="pilcrow">¶</a></p>
+<p id="section-7-1">TBD<a href="#section-7-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="security-considerations">
-<section id="section-7">
+<section id="section-8">
       <h2 id="name-security-considerations">
-<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-security-considerations" class="section-name selfRef">Security considerations</a>
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-security-considerations" class="section-name selfRef">Security considerations</a>
       </h2>
-<p id="section-7-1">This document does currently not discuss risks that are generic to the MASQUE
-approach.<a href="#section-7-1" class="pilcrow">¶</a></p>
-<p id="section-7-2">Any CONNECT-IP specific risks need further consideration in future, especially
-when the handling of IP functions is defined in more detail.<a href="#section-7-2" class="pilcrow">¶</a></p>
+<p id="section-8-1">This document does currently not discuss risks that are generic to the MASQUE approach.<a href="#section-8-1" class="pilcrow">¶</a></p>
+<p id="section-8-2">Any CONNECT-IP specific risks need further consideration in future, especially
+when the handling of IP functions is defined in more detail.<a href="#section-8-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="iana">
-<section id="section-8">
+<section id="section-9">
       <h2 id="name-iana-considerations">
-<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA considerations</a>
+<a href="#section-9" class="section-number selfRef">9. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA considerations</a>
       </h2>
 <div id="iana-method">
-<section id="section-8.1">
+<section id="section-9.1">
         <h3 id="name-http-method">
-<a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-http-method" class="section-name selfRef">HTTP Method</a>
+<a href="#section-9.1" class="section-number selfRef">9.1. </a><a href="#name-http-method" class="section-name selfRef">HTTP Method</a>
         </h3>
-<p id="section-8.1-1">This document (if published as RFC) registers "CONNECT-IP" in the HTTP Method
-Registry maintained at &lt;<span><a href="https://www.iana.org/assignments/http-methods">https://www.iana.org/assignments/http-methods</a></span>&gt;.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-8.1-2">
+<p id="section-9.1-1">This document (if published as RFC) registers "CONNECT-IP" in the HTTP Method Registry
+maintained at &lt;<span><a href="https://www.iana.org/assignments/http-methods">https://www.iana.org/assignments/http-methods</a></span>&gt;.<a href="#section-9.1-1" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-9.1-2">
 <pre>
   +--------------+------+------------+---------------+
   | Method Name  | Safe | Idempotent |   Reference   |
   +--------------+------+------------+---------------+
   | CONNECT-QUIC |  no  |     no     | This document |
   +--------------+------+------------+---------------+
-</pre><a href="#section-8.1-2" class="pilcrow">¶</a>
+</pre><a href="#section-9.1-2" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
 <div id="iana-header">
-<section id="section-8.2">
+<section id="section-9.2">
         <h3 id="name-http-header">
-<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-http-header" class="section-name selfRef">HTTP Header</a>
+<a href="#section-9.2" class="section-number selfRef">9.2. </a><a href="#name-http-header" class="section-name selfRef">HTTP Header</a>
         </h3>
-<p id="section-8.2-1">This document (if published as RFC) registers the "Conn-Id" and "IP-Protocol"
-header in the "Permanent Message Header Field Names" registry maintained at
-&lt;<span><a href="https://www.iana.org/assignments/message-headers">https://www.iana.org/assignments/message-headers</a></span>&gt;.<a href="#section-8.2-1" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-8.2-2">
+<p id="section-9.2-1">This document (if published as RFC) registers the "Conn-Id" and "IP-Protocol" header in the
+"Permanent Message Header Field Names" registry maintained at
+&lt;<span><a href="https://www.iana.org/assignments/message-headers">https://www.iana.org/assignments/message-headers</a></span>&gt;.<a href="#section-9.2-1" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-9.2-2">
 <pre>
   +-------------------+----------+--------+---------------+
   | Header Field Name | Protocol | Status |   Reference   |
@@ -1804,24 +1803,24 @@ header in the "Permanent Message Header Field Names" registry maintained at
   +-------------------+----------+--------+---------------+
   | IP-Protocol       |   http   |  exp   | This document |
   +-------------------+----------+--------+---------------+
-</pre><a href="#section-8.2-2" class="pilcrow">¶</a>
+</pre><a href="#section-9.2-2" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
 </section>
 </div>
 <div id="acknowledgments">
-<section id="section-9">
+<section id="section-10">
       <h2 id="name-acknowledgments">
 <a href="#name-acknowledgments" class="section-name selfRef">Acknowledgments</a>
     </h2>
 </section>
 </div>
-<section id="section-10">
+<section id="section-11">
       <h2 id="name-references">
 <a href="#name-references" class="section-name selfRef">References</a>
       </h2>
-<section id="section-10.1">
+<section id="section-11.1">
         <h3 id="name-normative-references">
 <a href="#name-normative-references" class="section-name selfRef">Normative References</a>
         </h3>
@@ -1876,7 +1875,7 @@ header in the "Permanent Message Header Field Names" registry maintained at
 <dd class="break"></dd>
 </dl>
 </section>
-<section id="section-10.2">
+<section id="section-11.2">
         <h3 id="name-informative-references">
 <a href="#name-informative-references" class="section-name selfRef">Informative References</a>
         </h3>
