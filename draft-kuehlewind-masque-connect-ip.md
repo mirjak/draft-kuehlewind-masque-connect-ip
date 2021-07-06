@@ -474,28 +474,26 @@ A MASQUE server that receives an IP-CONNECT request, opens a raw socket and
 creates state to map a connection identifier, which might be a tuple, to a
 target IP address. Once this is successfully established, the proxy sends a
 HEADERS frame containing a 2xx series status code to the client. To indicate
-support of datagram mode, if requested by the client, the MASQUE server reflects
+support of datagrams, if requested by the client, the MASQUE server reflects
 the Datagram-Flow-Id Header from the client's request on the HTTP response.
-
-Response contains outgoing IP address or IP range; optional for tunneling mode.
-
+The response MAY contain and IP-Address header indicating the outgoing IP address
+or IP address range selected by the proxy. 
 
 All DATA frames received on that stream as well as all HTTP/3 datagrams with the
-specified Datagram-flow-ID are forwarded to the target server by adding an IP
-header (see section {{IP-header}} below) and sending the packet on the respective raw socket.
+specified Datagram-flow-ID are forwarded to the target server.
 
 IP packets received from the target server are mapped to an active
-forwarding connection and its payload is then respectively forwarded in an DATA
+forwarding connection and are respectively forwarded in an CAPSULE DATAGRAM
 frame or HTTP/3 datagram to the client (see section {{receiving}} below).
 
 ## Error handling
 
 TBD (e.g. out of IP address, conn-id collision)
 
-## IP address selection and NAT
+## IP address selection in flow forwarding mode
 
-Since a MASQUE server adds the IP header when sending the IP payload towards the
-target server, it also select an source IP address from its pool of IP address
+In flow forwarding modee the proxy constructs the IP header when sending the IP payload towards the
+target server and it selects an source IP address from its pool of IP address
 that are routed to the MASQUE server.
 
 If no additional information about a payload field that can be used as an
@@ -518,7 +516,7 @@ the same IP address is used for multiple clients, this can still lead to an
 identifier collision and the IP-CONNECT request MUST be reject if such a
 collision is detect.
 
-## Constructing the IP header {#IP-header}
+## Constructing the IP header in flow forwarding mode {#IP-header}
 
 To retrieve the source and destination address the proxy looks up the
 mapping for the datagram flow ID or stream identifier. The IP version, flow
@@ -541,24 +539,20 @@ When the MASQUE proxy receives an incoming IP packet, it checks if the source
 and destination IP address as well as the IPv4 Protocol or IPv6 Next header field
 and maps to an active tunnel or flow forwarding association.
 
+If a client has a tunnel
+as well as multiple flow forwarding associations, the proxy need to check the mappings
+for the flow forwarding associations first, and only send it over the the tunnel association
+if no active flow forwarding is found.
+
 If one or more
 mappings exists, it further checks if this mapping contains additional
 identifier information as provided by the Conn-ID Header of the CONNECT-IP
 request.  If this field maps as well, the IP payload is forwarded
 to the client. If no active mapping is found, the IP packet is discarded.
 
-
-If a client has a tunnel
-as well as multiple flow forwarding associations, the proxy need to check the mappings
-for the flow forwarding associations first, and only send it over the the tunnel association
-if no active flow forwarding is found.
-
-
-The masque server should use the same
-forwarding mode as used by the client.  If both modes, datagram and stream
-based, are used, it is recommended to use the same mode as most recently used by the
-client or datagram mode as default. Alternatively, the client might indicate a
-preference in the configuration file.
+If both datagram and stream
+based forwarding is supported, it is recommended for the proxy to use the same encapsulation as most recently used by the
+client or datagrams as default. Further considerations might be needed heree.
 
 # Additional signalling
 
@@ -574,7 +568,8 @@ congestion notification (IP CE codepoint) was observed in any IP header of a
 received packet from the target server.
 
 Possible realizations are: a) always have two bits before payload 
-in flow forwarding model or use 4 different context IDs.
+in flow forwarding model or use 4 different context IDs. This is work in
+process and will be further specified in a future version of this document.
 
 ## ICMP handling {#ICMP}
 
