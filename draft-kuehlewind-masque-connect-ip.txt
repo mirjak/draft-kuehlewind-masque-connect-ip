@@ -122,14 +122,14 @@ Table of Contents
    interface without any modification and also forwards all incoming
    traffic to registered clients as payload within the respective
    tunneling association.  However, a proxy MUST offer this service only
-   for known clients and clients MUST be authenficated during connection
-   establishment.  The proxy SHOULLD inspect the source IP address of
-   the IP packet in the tunnel payload and only forward is the IP
-   address matches a set of registered client IP address.  Optionally a
-   proxy also MAY offer this service only for a limited set of target
-   addresses.  In such a case the proxy SHOULD also inspect the
-   destination IP address and reject packets with unknown destination
-   address with an error message.
+   for known clients and clients MUST be authentificated during
+   connection establishment.  The proxy SHOULLD inspect the source IP
+   address of the IP packet in the tunnel payload and only forward is
+   the IP address matches a set of registered client IP address.
+   Optionally, a proxy also MAY offer this service only for a limited
+   set of target addresses.  In such a case the proxy SHOULD also
+   inspect the destination IP address and reject packets with unknown
+   destination address with an error message.
 
 1.2.  Flow Forwarding mode
 
@@ -377,6 +377,9 @@ Table of Contents
    request MUST contain the IP-Protocol header and MAY contain the Conn-
    ID header.
 
+   Request use of stable (provide stream ID of active CONNECT request)
+   or different IP addresses (new HTTP header).
+
 3.1.  IP-Protocol Header for CONNECT-IP
 
    In order to construct the IP header the MASQUE server needs to fill
@@ -430,6 +433,8 @@ Table of Contents
    header to indicate if IPv4 or IPv6 is used for the IP packet in the
    tunnel payload.
 
+   Request an IP or IP address range optionally (new HTTP header).
+
 4.1.  IP-Version header for CONNECT-IP
 
      IP-Version = sf-integer
@@ -443,6 +448,9 @@ Table of Contents
    status code to the client.  To indicate support of datagram mode, if
    requested by the client, the MASQUE server reflects the Datagram-
    Flow-Id Header from the client's request on the HTTP response.
+
+   Response contains outgoing IP address or IP range; optional for
+   tunneling mode.
 
    All DATA frames received on that stream as well as all HTTP/3
    datagrams with the specified Datagram-flow-ID are forwarded to the
