@@ -461,7 +461,12 @@ or source IP address for compliance.
 
 IP-Address is a Item Structured Header {{RFC8941}}.
 Its value MUST be an String contain an IP address or IP range
-of the same IP version as indicated in thhe IP-Version header.
+of the same IP version as indicated in the IP-Version header.
+This header is used to request the use of a certain IP address
+or IP address range. If the IP-Address header is not presented,
+the proxy is implicitly request to assign an IP address or IP
+address range and provide this information to the client with
+the HTTP response.
 
 ~~~
   IP-Address = sf-string
