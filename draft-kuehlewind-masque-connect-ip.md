@@ -372,7 +372,7 @@ proxy indicating the target host and port in the ":authority" pseudo-header
 field. The host portion is either an IP literal encapsulated within square
 brackets, an IPv4 address in dotted-decimal form, or a registered name.
 Further the CONNECT-IP request MUST contain the IP-Protocol header and MAY
-contain the Conn-ID header.
+contain the IP-Address-Handling or the Conn-ID header.
 
 Request use of stable (provide stream ID of active CONNECT request) or different IP addresses (new HTTP header).
 
@@ -384,11 +384,28 @@ mostly opaque to the MASQUE forwarding server, this information has to be provid
 the client for each CONNECT-IP request. Therefore this document define a new header
 field that is mandatory to use with CONNECT-IP called "IP-Protocol".
 
-IP-Protocol is a Item Structured Header {{!I-D.ietf-httpbis-header-structure}}.
+IP-Protocol is a Item Structured Header {{!RFC8941}}.
 Its value MUST be an Integer. Its ABNF is:
 
 ~~~
   IP-Protocol = sf-integer
+~~~
+
+## IP-Address-Handling Header for CONNECT-IP
+
+Thiss header can be used to request the use of a stable address for 
+multiple active flow forwarding associations. The first association will be
+established with an IP selected by thhe IP, however, additional forwarding association
+can be requested by the client to use the same IP address. This header can also be 
+used to ensure that a "new", not yet for this client used address is selected by
+setting a value that is larger than the maximum stream ID.
+
+IP-Protocol is a Item Structured Header {{RFC8941}}.
+Its value MUST be an Integer and indicates the stream ID of the corresponding
+active flow forwarding association. Its ABNF is:
+
+~~~
+  IP-Address-Handling = sf-integer
 ~~~
 
 ## Conn-ID Header for CONNECT-IP
@@ -399,7 +416,7 @@ length of a field in the IP payload that can be used by the MASQUE as a
 connection identifier in addition to the IP address tuple when multiple
 connections are proxied to the same target server.
 
-Conn-ID is a Item Structured Header {{!I-D.ietf-httpbis-header-structure}}.
+Conn-ID is a Item Structured Header {{RFC8941}}.
 Its value MUST be a Byte Sequence. Its ABNF is:
 
 ~~~
@@ -421,20 +438,35 @@ are not present.
 This function can be used to e.g. indicate the source port field in the IP
 payload when containing a TCP packet.
 
-# Requesting Tunnel mode
+# Requesting tunnel mode
 
 In tunnel mode, the CONNECT-IP request MUST contain the IP-Version header to
 indicate if IPv4 or IPv6 is used for the IP packet in the tunnel payload.
-
-Request an IP or IP address range optionally (new HTTP header).
+Further, thhe request MAY contain an IP-Address header to request
+use of an IP addres or IP address range.
 
 ## IP-Version header for CONNECT-IP
 
-
+IP-Version is a Item Structured Header {{RFC8941}}.
+Its value MUST be an Integer and either 4 or 6. This information is used
+by the proxy to check if the requested IP version is supported by the
+network that the proxy is connected to, as well as to check the destination
+or source IP address for compliance.
 
 ~~~
   IP-Version = sf-integer
 ~~~
+
+## IP-Address header for CONNECT-IP
+
+IP-Address is a Item Structured Header {{RFC8941}}.
+Its value MUST be an String contain an IP address or IP range
+of the same IP version as indicated in thhe IP-Version header.
+
+~~~
+  IP-Address = sf-string
+~~~
+
 
 # MASQUE server behavior {#server}
 
@@ -575,24 +607,30 @@ maintained at <[](https://www.iana.org/assignments/http-methods)>.
   +--------------+------+------------+---------------+
   | Method Name  | Safe | Idempotent |   Reference   |
   +--------------+------+------------+---------------+
-  | CONNECT-QUIC |  no  |     no     | This document |
+  | CONNECT-IP   |  no  |     no     | This document |
   +--------------+------+------------+---------------+
 ~~~
 
 ## HTTP Header {#iana-header}
 
-This document (if published as RFC) registers the "Conn-Id" and "IP-Protocol" header in the
+This document (if published as RFC) registers the following header in the
 "Permanent Message Header Field Names" registry maintained at
 <[](https://www.iana.org/assignments/message-headers)>.
 
 ~~~
-  +-------------------+----------+--------+---------------+
-  | Header Field Name | Protocol | Status |   Reference   |
-  +-------------------+----------+--------+---------------+
-  | Conn-Id           |   http   |  exp   | This document |
-  +-------------------+----------+--------+---------------+
-  | IP-Protocol       |   http   |  exp   | This document |
-  +-------------------+----------+--------+---------------+
+  +---------------------+----------+--------+---------------+
+  | Header Field Name   | Protocol | Status |   Reference   |
+  +---------------------+----------+--------+---------------+
+  | Conn-ID             |   http   |  exp   | This document |
+  +---------------------+----------+--------+---------------+
+  | IP-Protocol         |   http   |  exp   | This document |
+  +---------------------+----------+--------+---------------+
+  | IP-Address          |   http   |  exp   | This document |
+  +---------------------+----------+--------+---------------+
+  | IP-Address-Handling |   http   |  exp   | This document |
+  +---------------------+----------+--------+---------------+
+  | IP-Verison          |   http   |  exp   | This document |
+  +---------------------+----------+--------+---------------+
 ~~~
 
 # Acknowledgments {#acknowledgments}
