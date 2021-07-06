@@ -107,50 +107,61 @@ Table of Contents
 1.  Introduction
 
    This document specifies the CONNECT-IP method for IPv4 [RFC0791] and
-   IPv6 [RFC8200] flows when they are proxied according to the MASQUE
-   proposal over HTTP/3.
+   IPv6 [RFC8200] tunneling and flow forwarding over HTTP/3, according
+   to the MASQUE proposal.
 
-   In flow forwarding mode the proxy has authority about the outgoing IP
-   used, while in tunnel mode the IP address must be known and set by
-   the client.
+   The default model for address handling in this specification is that
+   the proxy (Masque Server) will have a pool of one or more IP
+   addresses that it can lend to the MASQUE client routable over its
+   external interface.  Other potential use cases and address handling
+   are possible, potentially requiring further extensions.
 
 1.1.  Tunnel mode
 
-   In tunnel mode the ":authority" pseudo-header field of the CONNECT-IP
-   request contain the host and listing port of the proxy itself.  In
-   this mode the proxy just blindly forwards all payload on it outfacing
-   interface without any modification and also forwards all incoming
-   traffic to registered clients as payload within the respective
-   tunneling association.  However, a proxy MUST offer this service only
-   for known clients and clients MUST be authentificated during
-   connection establishment.  The proxy SHOULLD inspect the source IP
-   address of the IP packet in the tunnel payload and only forward is
-   the IP address matches a set of registered client IP address.
-   Optionally, a proxy also MAY offer this service only for a limited
-   set of target addresses.  In such a case the proxy SHOULD also
-   inspect the destination IP address and reject packets with unknown
-   destination address with an error message.
+   In tunnel mode the client requests tunnel IP packets to and from the
+   proxy.  The Connect-IP request establish such a tunnel and indicate
+   the IP address or IP range that will be allowed to be forwarded.
+
+   The tunnel mode is indicated by the ":authority" pseudo-header field
+   of the CONNECT-IP request contain the host and listing port of the
+   proxy itself.  In this mode the proxy just blindly forwards all
+   payload on it external interface without any modification and also
+   forwards all incoming traffic to registered clients as payload within
+   the respective tunneling association.  However, a proxy MUST offer
+   this service only for known clients and clients MUST be
+   authentificated during connection establishment.  The proxy SHOULLD
+   inspect the source IP address of the IP packet in the tunnel payload
+   and only forward is the IP address matches a set of registered client
+   IP address.  Optionally, a proxy also MAY offer this service only for
+   a limited set of target addresses.  In such a case the proxy SHOULD
+   also inspect the destination IP address and reject packets with
+   unknown destination address with an error message.
 
 1.2.  Flow Forwarding mode
 
    In flow forwarding mode the CONNECT-IP method establishes an outgoing
    IP flow, from the MASQUE server's external address to the target
-   server's address specified by the client.  The method also enables
-   reception and relaying of the reverse IP flow from the target address
-   to the MASQUE server to ensure that return traffic can be received by
-   the client.  However, it does not support flow establishment by an
-   external server.
-   This specification supports forwarding of incoming traffic to one of
-   the clients only if an active mapping has previously been created
-   based on an IP-CONNECT request.
+   server's address specified by the client for a particular upper layer
+   protocol.  The method also enables reception and relaying of the
+   reverse IP flow from the target address to the MASQUE server to
+   ensure that return traffic can be received by the client.  However,
+   it does not support flow establishment by an external peer.  This
+   specification supports forwarding of incoming traffic to one of the
+   clients only if an active mapping has previously been created based
+   on an IP-CONNECT request.  Clients that need to support flow
+   established by external peer need to use Tunnel Mode.
 
    This mode covers the point-to-point use case and allows for flow-
-   based optimizations.  As the target IP address and port is provided
-   by the client as part of the CONNECT-IP request and the sources
-   address is anyway selected by the proxy, in this mode the palyoad
-   does not contain the IP header as part of the payload between the
-   client and proxy in order to reduce overhead.  Other information that
-   might be needed to construct the IP header or to inform the client
+   based optimizations.  The target IP address is provided by the client
+   as part of the CONNECT-IP request.  The sources address is eiter
+   selected by the proxy, requested to be the same as previous CONNECT-
+   IP request or different from previous request by this client.  The
+   client also indicate the upper layer protocol, thus defining the
+   three tuple used as primary selector for the flow.
+
+   In this mode the payload between the client and proxy does not
+   contain the IP header in order to reduce overhead.  The information
+   that is needed to construct the IP header or to inform the client
    about information from received IP packets can be signalled as part
    of the CONNECT-IP requst or using HTTP CAPSULATE frames
    [I-D.schinazi-quic-h3-datagram] later.
@@ -162,36 +173,57 @@ Table of Contents
    server, as long as they all require the same Protocol (IPv4) / Next
    Header (IPv6) value, this would lead to the use of the same flow ID
    for all connections.  As such this is not recommended for connection-
-   oriented transmissions.
+   oriented transmissions the flow mode supports to specify some
+   additional upper layer protocol selectors, e.g.  TCP source and
+   destination port, to enable multiple CONNECT-IP request for the same
+   three tuple.
 
    This proposal is based on the analysis provided in
    [I-D.westerlund-masque-transport-issues] indicating that most
    information in the IP header is either IP flow related or can or even
    should be provided by the proxy as the IP communication endpoint
-   without the need for input from the client.  The only information
-   identified that requires client interaction is ECN [RFC3168] and ICMP
-   [RFC0792] [RFC4443] handling.
+   without the need for input from the client.  The most crucial
+   information identified that requires client interaction is ECN
+   [RFC3168] and ICMP [RFC0792] [RFC4443] handling.
 
-   _** Rewrite this part to indicate which information is or can be
-   signaled to/from the client (target address, protocol field) or is
-   set by the proxy **_
+   This document defines the following IP header field treatment.
 
-   Therefore, flow forwading mode uses an IP flow definition that is
-   tighter than just source and destination address of the IP packet.
-   To reduce the overhead a number of IP header field values that are
-   static in the context of an upper layer protocol connection, e.g.
-   when UDP or TCP are used, are associated with an MASQUE IP flow at
-   creation.  These fields include the Protocol (IPv4) / Next Header
-   (IPv6), IPv6 flow label, Diffserv Code Point (DSCP), TTL / Hop Limit,
-   where a default value or locally generated value based on the
-   CONNECT-IP context is sufficient.  Signalling of other dedicated
-   values may be desired in certain deployments, e.g for DCSP [RFC2474].
-   However, DSCP is in any case a challenge due to local domain
-   dependency of the used DSCP values and the forwarding behavior and
-   traffic treatment they represent.  Future use cases for DSCP, as well
-   as new IPv6 extension headers or destination header options [RFC8200]
-   may require additional signaling.  Therefore, it is important that
-   the signaling is extensible.
+   Required to be determined in Connect-IP request and response:
+
+   *  IP version
+
+   *  IP Source Address
+
+   *  IP Destination Address (target address)
+
+   *  Upper Layer Protocol (IPv4 Protocol Field / IPv6 Next Header
+      field)
+
+   Can be chosen by Proxy on transmission:
+
+   *  IPv6 Flow label (per Connect-IP flow mode request)
+
+   *  IPv4 Time to live / IPv6 Hop Limit (proxy configured)
+
+   *  Diffserv Codepoint set to 0 (Best Effort)
+
+   May optionally be provided on a per packet basis
+
+   *  Explicit Congestion Notification in both directions.
+
+   The consequence of this is certain limitations that future extension
+   may address.  For packets from the target address forward to the
+   client it will not get any information on the actual value of TTL/Hop
+   Count, DSCP, or flow label when received by the proxy.
+
+   Signalling of other dedicated values may be desired in certain
+   deployments, e.g for DCSP [RFC2474].  However, DSCP is in any case a
+   challenge due to local domain dependency of the used DSCP values and
+   the forwarding behavior and traffic treatment they represent.  Future
+   use cases for DSCP, as well as new IPv6 extension headers or
+   destination header options [RFC8200] may require additional
+   signaling.  Therefore, it is important that the signaling is
+   extensible.
 
 1.2.1.  Motivation of IP flow model for flow forwarding
 
@@ -212,10 +244,8 @@ Table of Contents
 
    Disadvantages of this model are the following:
 
-   *  Client server focused solution: Accepting non-solicited server-
-      initiated traffic is challenging and require MASQUE server to
-      client signalling when incoming packets are receiived at the
-      proxy.
+   *  Client to server focused solution: Accepting non-solicited peer-
+      initiated traffic is not supported.
 
 1.3.  Definitions
 
@@ -663,10 +693,6 @@ Normative References
               of Explicit Congestion Notification (ECN) to IP",
               RFC 3168, DOI 10.17487/RFC3168, September 2001,
               <https://datatracker.ietf.org/doc/html/rfc3168>.
-
-   [RFC7159]  Bray, T., Ed., "The JavaScript Object Notation (JSON) Data
-              Interchange Format", RFC 7159, DOI 10.17487/RFC7159, March
-              2014, <https://datatracker.ietf.org/doc/html/rfc7159>.
 
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
