@@ -89,7 +89,8 @@ possible, potentially requiring further extensions.
 ## Tunnel mode
 
 In tunnel mode the client requests tunnel IP packets to and from
-the proxy. The Connect-IP request establish such a tunnel and indicate
+the proxy. The Connect-IP request establishes such a tunnel and
+optionally indicates
 the IP address or IP range that will be allowed to be forwarded. 
 
 The tunnel mode is indicated by the ":authority" pseudo-header field
