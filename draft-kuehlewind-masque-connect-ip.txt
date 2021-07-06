@@ -134,10 +134,9 @@ Table of Contents
    reception and relaying of the reverse IP flow from the target address
    to the MASQUE server to ensure that return traffic can be received by
    the client.  However, it does not support flow establishment by an
-   external server.
-   This specification supports forwarding of incoming traffic to one of
-   the clients only if an active mapping has previously been created
-   based on an IP-CONNECT request.
+   external server.  This specification supports forwarding of incoming
+   traffic to one of the clients only if an active mapping has
+   previously been created based on an IP-CONNECT request.
 
    This mode cover the point-to-point use case and allows for flow-based
    optimizations.  As the target IP address and port is provided by the
