@@ -95,12 +95,12 @@ the IP address or IP range that will be allowed to be forwarded.
 The tunnel mode is indicated by the ":authority" pseudo-header field
 of the CONNECT-IP request contain the host and listing port of the
 proxy itself. In this mode the proxy just blindly forwards all payload
-on it external interface without any modification and also forwards
+on its external interface without any modification and also forwards
 all incoming traffic to registered clients as payload within the
 respective tunneling association. However, a proxy MUST offer this
 service only for known clients and clients MUST be authentificated
 during connection establishment. The proxy SHOULLD inspect the source
-IP address of the IP packet in the tunnel payload and only forward is
+IP address of the IP packet in the tunnel payload and only forward if
 the IP address matches a set of registered client IP
 address. Optionally, a proxy also MAY offer this service only for a
 limited set of target addresses. In such a case the proxy SHOULD also
@@ -112,25 +112,28 @@ destination address with an error message.
 In flow forwarding mode the CONNECT-IP method establishes an outgoing
 IP flow, from the MASQUE server's external address to the target
 server's address specified by the client for a particular upper layer
-protocol. The method also enables reception and relaying of the
+protocol. This mode also enables reception and relaying of the
 reverse IP flow from the target address to the MASQUE server to ensure
 that return traffic can be received by the client.  However, it does
 not support flow establishment by an external peer.  This
 specification supports forwarding of incoming traffic to one of the
 clients only if an active mapping has previously been created based on
 an IP-CONNECT request. Clients that need to support flow established
-by external peer need to use Tunnel Mode.
+by external peer need to use tunnel mode.
 
 This mode covers the point-to-point use case and allows for flow-based
 optimizations.  The target IP address is provided by the client as
-part of the CONNECT-IP request. The sources address is eiter selected
-by the proxy, requested to be the same as previous CONNECT-IP request
-or different from previous request by this client. The client also
-indicate the upper layer protocol, thus defining the three tuple
+part of the CONNECT-IP request. The sources address is eiter
+independently selected by the proxy or can be requested to be either the same
+as used in a previous and currently active CONNECT-IP request
+or different from currently requests by the same client. The client also
+indicates the upper layer protocol, thus defining the three tuple
 used as primary selector for the flow.
 
 In this mode the payload between the client and proxy does not contain
-the IP header in order to reduce overhead. The information that is
+the IP header in order to reduce overhead. Any additional information
+(other than the source and destination IP addresses and ports as well as 
+the upper layer protocol identifier) that is
 needed to construct the IP header or to inform the client about
 information from received IP packets can be signalled as part of the
 CONNECT-IP requst or using HTTP CAPSULATE frames
@@ -143,7 +146,9 @@ forwadring association for multiple end-to-end connections to the same
 target server, as long as they all require the same Protocol (IPv4) /
 Next Header (IPv6) value, this would lead to the use of the same flow
 ID for all connections. As such this is not recommended for
-connection-oriented transmissions the flow mode supports to specify
+connection-oriented transmissions. In order to enable multiple
+flow forwadring asssociation to the same server, the flow forwading
+mode supports a way to specify
 some additional upper layer protocol selectors, e.g. TCP source and
 destination port, to enable multiple CONNECT-IP request for the same
 three tuple. 
@@ -181,9 +186,10 @@ May optionally be provided on a per packet basis
   * Explicit Congestion Notification in both directions.
 
 The consequence of this is certain limitations that future extension
-may address. For packets from the target address forward to the client
-it will not get any information on the actual value of TTL/Hop Count,
-DSCP, or flow label when received by the proxy.
+can address. For packets that are sent from the target server to the client,
+the clieent will not get any information on the actual value of TTL/Hop Count,
+DSCP, or flow label when received by the proxy. Instead these field are
+set and consumed by the prroxy only.
 
 Signalling of other dedicated values may be desired in certain
 deployments, e.g for DCSP {{RFC2474}}.  However, DSCP is in any case a
