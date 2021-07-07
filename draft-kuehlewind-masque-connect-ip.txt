@@ -16,16 +16,19 @@ Expires: 8 January 2022                                        Z. Sarker
 Abstract
 
    This draft specifies a new HTTP/3 method CONNECT-IP to proxy IP
-   traffic.  CONNECT-IP can be used to convert a QUIC stream into a
-   tunnel or initialise an HTTP datagram association to a forwarding
-   proxy.  CONNECT-IP supports two modes: a pure tunneling mode where
-   packets are forwarded without modifications and flow forwarding mode
-   which supports optimiation for individual IP flows forwarded to
-   decicated target servers.  To request tunneling or forwarding, a
-   client connects to a proxy server by initiating a HTTP/3 connection
-   and sends a CONNECT-IP which either indicates the address of the
-   proxy or the target server.  The proxy then forwards payload received
-   on that stream or in an HTTP datagram with a certain flow ID.
+   traffic.  CONNECT-IP uses HTTP/3 Datagrams to use QUIC Datagrams for
+   efficient transport of tunneled or proxied IP packets, with the
+   possibility to fallback to HTTP/3 over relibale QUIC streams, or even
+   HTTP 1.x and 2.
+
+   CONNECT-IP supports two modes: a tunneling mode where IP packets are
+   forwarded without modifications and flow forwarding mode which
+   supports optimiation for individual IP flows forwarded to the
+   targeted peer.  To request tunneling or forwarding, a client connects
+   to a proxy server by initiating a HTTP/3 connection and sends a
+   CONNECT-IP request which either indicates the address of the proxy or
+   the target peer.  The proxy then forwards payload received on that
+   stream or in an HTTP datagram with a certain stream ID.
 
 Discussion Venues
 
@@ -443,9 +446,9 @@ Table of Contents
    a "new", not yet for this client used address is selected by setting
    a value that is larger than the maximum stream ID.
 
-   IP-Protocol is a Item Structured Header [RFC8941].  Its value MUST be
-   an Integer and indicates the stream ID of the corresponding active
-   flow forwarding association.  Its ABNF is:
+   IP-Address-Handling is a Item Structured Header [RFC8941].  Its value
+   MUST be an Integer and indicates the stream ID of the corresponding
+   active flow forwarding association.  Its ABNF is:
 
      IP-Address-Handling = sf-integer
 
@@ -513,6 +516,9 @@ Table of Contents
    will be discarded and a new CONNECT-IP request has to be sent.
 
      IP-Address = sf-string
+
+   Note: Header is also used in flow forwarding responses to indicate
+   assigned IP address.
 
 5.  MASQUE server behavior
 
@@ -692,13 +698,6 @@ Acknowledgments
 References
 
 Normative References
-
-   [I-D.ietf-httpbis-header-structure]
-              Nottingham, M. and P. Kamp, "Structured Field Values for
-              HTTP", Work in Progress, Internet-Draft, draft-ietf-
-              httpbis-header-structure-19, 3 June 2020,
-              <https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-
-              header-structure-19>.
 
    [I-D.ietf-httpbis-messaging]
               Fielding, R. T., Nottingham, M., and J. Reschke,
