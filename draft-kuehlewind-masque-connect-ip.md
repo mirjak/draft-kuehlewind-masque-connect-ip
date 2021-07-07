@@ -536,13 +536,13 @@ socket and creates state to map a connection identifier, which might
 be a tuple, to a target IP address. Once this is successfully
 established, the proxy sends a HEADERS frame containing a 2xx series
 status code to the client. To indicate support of datagrams, if
-requested by the client, the MASQUE server reflects the
-Datagram-Flow-Id Header from the client's request on the HTTP
-response.  The response MAY contain and IP-Address header indicating
+requested by the client, the MASQUE server sends H3_DATAGRAM SETTINGS
+parameter with a value of 1.
+The response MAY contain and IP-Address header indicating
 the outgoing IP address or IP address range selected by the proxy.
 
 All DATA frames received on that stream as well as all HTTP/3
-datagrams with the specified Datagram-flow-ID are forwarded to the
+datagrams belonging to this CONNECT-IP asociation are forwarded to the
 target server.
 
 IP packets received from the target server are mapped to an active
