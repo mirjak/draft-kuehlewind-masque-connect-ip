@@ -2,7 +2,7 @@
 
 This is the working area for the individual Internet-Draft, "The CONNECT-IP method for proxying IP traffic".
 
-* [Editor's Copy](https://mirjak.github.io/draft-kuehlewind-masque-connect-ip/#go.draft-kuehlewind-masque-connect-ip.html)
+* [Editor's Copy](https://mirjak.github.io/draft-kuehlewind-masque-connect-ip/draft-kuehlewind-masque-connect-ip.html)
 * [Individual Draft](https://tools.ietf.org/html/draft-kuehlewind-masque-connect-ip)
 * [Compare Editor's Copy to Individual Draft](https://mirjak.github.io/draft-kuehlewind-masque-connect-ip/#go.draft-kuehlewind-masque-connect-ip.diff)
 
