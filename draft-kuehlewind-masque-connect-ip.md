@@ -157,7 +157,7 @@ forwadring asssociation to the same server, the flow forwading mode
 supports a way to specify some additional upper layer protocol
 selectors, e.g. TCP source and destination port, to enable multiple
 CONNECT-IP request for the same three tuple, see CONN-ID header
-{{conn-id-header}}.
+{{Conn-Id}}.
 
 This proposal is based on the analysis provided in
 {{?I-D.westerlund-masque-transport-issues}} indicating that most
@@ -396,60 +396,96 @@ payload following the IPv4 header and any options for IPv4, and for
 IPv6 as the payload following the IPv6 header and any extension
 header. Used for Flow Forwarding mode. 
 
+# HTTP Headers
 
-# Requesting flow forwarding {#client}
+Note: This section should be improved by clarifying if headers are
+request, response or both. 
 
-To request flow forwarding, the client sends a CONNECT-IP request to the forwarding
-proxy indicating the target host and port in the ":authority" pseudo-header
-field. The host portion is either an IP literal encapsulated within square
-brackets, an IPv4 address in dotted-decimal form, or a registered name.
-Further the CONNECT-IP request MUST contain the IP-Protocol header and MAY
-contain the IP-Address-Handling or the Conn-ID header.
+## IP-Protocol Header for CONNECT-IP {#IP-Protocol}
 
-Request use of stable (provide stream ID of active CONNECT request) or different IP addresses (new HTTP header).
+In order to construct the IP header the MASQUE server needs to fill
+the "Protocol" field in the IPv4 header or "Next header" field in the
+IPv6 header. As the IP payload is otherwise mostly opaque to the
+MASQUE forwarding server, this information has to be provided by the
+client for each CONNECT-IP request for flow forwarding.
 
-## IP-Protocol Header for CONNECT-IP
-
-In order to construct the IP header the MASQUE server needs to fill the "Protocol" field
-in the IPv4 header or "Next header" field in the IPv6 header. As the IP payload is otherwise
-mostly opaque to the MASQUE forwarding server, this information has to be provided by
-the client for each CONNECT-IP request. Therefore this document define a new header
-field that is mandatory to use with CONNECT-IP called "IP-Protocol".
-
-IP-Protocol is a Item Structured Header {{!RFC8941}}.
-Its value MUST be an Integer. Its ABNF is:
+IP-Protocol is a Item Structured Header {{!RFC8941}}.  Its value MUST
+be an Integer. Its ABNF is:
 
 ~~~
   IP-Protocol = sf-integer
 ~~~
 
-## IP-Address-Handling Header for CONNECT-IP
+## IP-Version header for CONNECT-IP
 
-Thiss header can be used to request the use of a stable address for 
-multiple active flow forwarding associations. The first association will be
-established with an IP selected by thhe IP, however, additional forwarding association
-can be requested by the client to use the same IP address. This header can also be 
-used to ensure that a "new", not yet for this client used address is selected by
-setting a value that is larger than the maximum stream ID.
+IP-Version is a Item Structured Header {{RFC8941}}.  Its value MUST be
+an Integer and either 4 or 6. This information is used by the proxy to
+check if the requested IP version is supported by the network that the
+proxy is connected to, as well as to check the destination or source
+IP address for compliance.
 
-IP-Address-Handling is a Item Structured Header {{RFC8941}}.
-Its value MUST be an Integer and indicates the stream ID of the corresponding
-active flow forwarding association. Its ABNF is:
+~~~
+  IP-Version = sf-integer
+~~~
+
+## IP-Address header for CONNECT-IP {#IP-Address}
+
+IP-Address is a Item Structured Header {{RFC8941}}.  Its value MUST be
+an String contain an IP address or IP range of the same IP version as
+indicated in the IP-Version header. The address must be specified in
+the format spectified by TBD.
+
+This header is used to request the use of a certain IP address or IP
+address range. If the IP-Address header is not presented, the proxy is
+implicitly requested to assign an IP address or IP address range and
+provide this information to the client with the HTTP response.
+
+If the the client does not provide an IP address or IP address range
+is has to wait for the proxy response before any payload data can be
+sent in tunnel mode. If the request is denied by the proxy as sent
+payload data will be discarded and a new CONNECT-IP request has to be
+sent.
+
+The header is also used as a response header to indicate the actual IP
+address or range that will be used.
+
+~~~
+  IP-Address = sf-string
+~~~
+
+
+## IP-Address-Handling Header for CONNECT-IP {#IP-Address-Handling}
+
+This header can be used to request the use of a stable address for
+multiple active flow forwarding associations. The first association
+will be established with an IP selected by the proxy unless also the
+IP-Address header ({{IP-Address}}) is provided and accepted by
+proxy. However, additional forwarding association can be requested by
+the client to use the same IP address as a previous request by
+specifying the stream ID as value in this header. This header can also
+be used to ensure that a "new", not yet for this client used address
+is selected by setting a value that is larger than the maximum stream
+ID.
+
+IP-Address-Handling is a Item Structured Header {{RFC8941}}.  Its
+value MUST be an Integer and indicates the stream ID of the
+corresponding active flow forwarding association. Its ABNF is:
 
 ~~~
   IP-Address-Handling = sf-integer
 ~~~
 
-## Conn-ID Header for CONNECT-IP {#conn-id-header}
+## Conn-ID Header for CONNECT-IP {#Conn-Id}
 
-This document further defines a new header field to be used with CONNECT-IP
-"Conn-ID". The Conn-ID HTTP header field indicates the value, offset, and
-length of a field in the IP payload that can be used by the MASQUE as a
-connection identifier in addition to the IP address tuple when multiple
-connections are proxied to the same target server.
+This document further defines a new header field to be used with
+CONNECT-IP "Conn-ID". The Conn-ID HTTP header field indicates the
+value, offset, and length of a field in the IP payload that can be
+used by the MASQUE as a connection identifier in addition to the IP
+address and protocol tuple when multiple connections are proxied to
+the same target server for incoming traffic on the external address.
 
-Conn-ID is a Item Structured Header {{RFC8941}}.
-Its value MUST be a Byte Sequence. Its ABNF is:
+Conn-ID is a Item Structured Header {{RFC8941}}.  Its value MUST be a
+Byte Sequence. Its ABNF is:
 
 ~~~
   Conn-ID = sf-binary
@@ -457,80 +493,62 @@ Its value MUST be a Byte Sequence. Its ABNF is:
 
 The following parameters are defined:
 
-* A parameter whose name is "offset", and whose value is an Integer indicating
-  the offset of the identifier field starting from the beginning of a datagram
-  or HTTP frame on the forwarding stream.
+* A parameter whose name is "offset", and whose value is an Integer
+  indicating the offset of the identifier field starting from the
+  beginning of a datagram or HTTP frame on the forwarding stream.
 
-* A parameter whose name is "length", and whose value is an Integer indicating the
-  length of the identifier field starting from the offset.
+* A parameter whose name is "length", and whose value is an Integer
+  indicating the length of the identifier field starting from the
+  offset.
 
-Both parameters MUST be present and the header MUST be ignored if these parameter
-are not present.
+Both parameters MUST be present and the header MUST be ignored if
+these parameter are not present.
 
-This function can be used to e.g. indicate the source port field in the IP
-payload when containing a TCP packet.
+This function can be used to e.g. indicate the source port field in
+the IP payload when containing a TCP packet.
 
-# Requesting tunnel mode
+# Client Connect-IP Request
 
-In tunnel mode, the CONNECT-IP request MUST contain the IP-Version header to
-indicate if IPv4 or IPv6 is used for the IP packet in the tunnel payload.
-Further, thhe request MAY contain an IP-Address header to request
-use of an IP addres or IP address range.
+## Requesting flow forwarding {#client}
 
-## IP-Version header for CONNECT-IP
+To request flow forwarding, the client sends a CONNECT-IP request to
+the forwarding proxy indicating the target host and port in the
+":authority" pseudo-header field. The host portion is either an IP
+literal encapsulated within square brackets, an IPv4 address in
+dotted-decimal form, or a registered name.  Further the CONNECT-IP
+request MUST contain the IP-Protocol header ({{IP-Protocol}}) and MAY
+contain the IP-Address-Handling ({{IP-Address-Handling}}) or the
+Conn-ID ({{Conn-Id}}) header.
 
-IP-Version is a Item Structured Header {{RFC8941}}.
-Its value MUST be an Integer and either 4 or 6. This information is used
-by the proxy to check if the requested IP version is supported by the
-network that the proxy is connected to, as well as to check the destination
-or source IP address for compliance.
 
-~~~
-  IP-Version = sf-integer
-~~~
+## Requesting tunnel mode
 
-## IP-Address header for CONNECT-IP
+In tunnel mode, the CONNECT-IP request MUST contain the IP-Version
+header to indicate if IPv4 or IPv6 is used for the IP packet in the
+tunnel payload.  Further, the request MAY contain an IP-Address
+header to request use of an IP addres or IP address range.
 
-IP-Address is a Item Structured Header {{RFC8941}}.
-Its value MUST be an String contain an IP address or IP range
-of the same IP version as indicated in the IP-Version header.
-
-This header is used to request the use of a certain IP address
-or IP address range. If the IP-Address header is not presented,
-the proxy is implicitly request to assign an IP address or IP
-address range and provide this information to the client with
-the HTTP response.
-
-If the the client does not provide an IP address or IP address
-range is has to wait for the proxy response before any payload
-data can be sent. If the request is denied by the proxy as sent
-payload data will be discarded and a new CONNECT-IP request has
-to be sent.
-
-~~~
-  IP-Address = sf-string
-~~~
-
-Note: Header is also used in flow forwarding responses to indicate
-assigned IP address.
 
 # MASQUE server behavior {#server}
 
-A MASQUE server that receives an IP-CONNECT request, opens a raw socket and
-creates state to map a connection identifier, which might be a tuple, to a
-target IP address. Once this is successfully established, the proxy sends a
-HEADERS frame containing a 2xx series status code to the client. To indicate
-support of datagrams, if requested by the client, the MASQUE server reflects
-the Datagram-Flow-Id Header from the client's request on the HTTP response.
-The response MAY contain and IP-Address header indicating the outgoing IP address
-or IP address range selected by the proxy. 
+A MASQUE server that receives an IP-CONNECT request, opens a raw
+socket and creates state to map a connection identifier, which might
+be a tuple, to a target IP address. Once this is successfully
+established, the proxy sends a HEADERS frame containing a 2xx series
+status code to the client. To indicate support of datagrams, if
+requested by the client, the MASQUE server reflects the
+Datagram-Flow-Id Header from the client's request on the HTTP
+response.  The response MAY contain and IP-Address header indicating
+the outgoing IP address or IP address range selected by the proxy.
 
-All DATA frames received on that stream as well as all HTTP/3 datagrams with the
-specified Datagram-flow-ID are forwarded to the target server.
+All DATA frames received on that stream as well as all HTTP/3
+datagrams with the specified Datagram-flow-ID are forwarded to the
+target server.
 
 IP packets received from the target server are mapped to an active
-forwarding connection and are respectively forwarded in an CAPSULE DATAGRAM
-frame or HTTP/3 datagram to the client (see section {{receiving}} below).
+forwarding connection and are respectively forwarded in an CAPSULE
+DATAGRAM frame or HTTP/3 datagram to the client (see section
+{{receiving}} below).
 
 ## Error handling
 
