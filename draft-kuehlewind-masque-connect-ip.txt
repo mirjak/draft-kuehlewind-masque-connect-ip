@@ -172,8 +172,7 @@ Table of Contents
    ports as well as the upper layer protocol identifier) that is needed
    to construct the IP header or to inform the client about information
    from received IP packets can be signalled as part of the CONNECT-IP
-   requst or using HTTP/3 Datagram [I-D.schinazi-quic-h3-datagram]
-   later.
+   requst or using HTTP/3 Datagram [I-D.ietf-masque-h3-datagram] later.
 
    As such, in flow forwarding mode usually one upper-layer end-to-end
    connection is associated to one CONNECT-IP forwarding association.
@@ -320,7 +319,7 @@ Table of Contents
 
    This document defines a new HTTP [I-D.ietf-httpbis-semantics] method
    CONNECT-IP to convert streams into tunnels or initialise HTTP
-   datagram flows [I-D.schinazi-quic-h3-datagram] to a forwarding proxy.
+   datagram flows [I-D.ietf-masque-h3-datagram] to a forwarding proxy.
    Each stream can be used separately to establish forwarding to
    potentially different remote hosts.  Unlike the HTTP CONNECT method,
    CONNECT-IP does not request the proxy to establish a TCP connection
@@ -339,7 +338,7 @@ Table of Contents
 
    *  The ":authority" pseudo-header field contains either the host and
       port to connect to (equivalent to the authority-form of the
-      request-target of CONNECT-UDP [I-D.schinazi-masque-connect-udp] or
+      request-target of CONNECT-UDP [I-D.ietf-masque-connect-udp] or
       CONNECT requests; see Section 3.2.3 of
       [I-D.ietf-httpbis-messaging]) or the host and port of the proxy if
       tunnel mode is requested
@@ -363,7 +362,7 @@ Table of Contents
    Header.
 
    QUESTION: datagram flow IDs are allocated by a flow id allocation
-   service at the server in [I-D.schinazi-quic-h3-datagram].  However,
+   service at the server in [I-D.ietf-masque-h3-datagram].  However,
    with CONNECT-IP you can always send your first message directly on
    the same stream right after the CONNECT-IP request and sever could
    provide you a flow ID together with a "2xx" response to the CONNECT-
@@ -715,6 +714,13 @@ Normative References
               <https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-
               semantics-16>.
 
+   [I-D.ietf-masque-connect-udp]
+              Schinazi, D., "The CONNECT-UDP HTTP Method", Work in
+              Progress, Internet-Draft, draft-ietf-masque-connect-udp-
+              03, 5 January 2021,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-masque-
+              connect-udp-03>.
+
    [I-D.ietf-masque-h3-datagram]
               Schinazi, D. and L. Pardue, "Using QUIC Datagrams with
               HTTP/3", Work in Progress, Internet-Draft, draft-ietf-
@@ -735,20 +741,6 @@ Normative References
               quic-http-34, 2 February 2021,
               <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
               http-34>.
-
-   [I-D.schinazi-masque-connect-udp]
-              Schinazi, D., "The CONNECT-UDP HTTP Method", Work in
-              Progress, Internet-Draft, draft-schinazi-masque-connect-
-              udp-00, 16 April 2020,
-              <https://datatracker.ietf.org/doc/html/draft-schinazi-
-              masque-connect-udp-00>.
-
-   [I-D.schinazi-quic-h3-datagram]
-              Schinazi, D., "Using QUIC Datagrams with HTTP/3", Work in
-              Progress, Internet-Draft, draft-schinazi-quic-h3-datagram-
-              05, 12 October 2020,
-              <https://datatracker.ietf.org/doc/html/draft-schinazi-
-              quic-h3-datagram-05>.
 
    [RFC0791]  Postel, J., "Internet Protocol", STD 5, RFC 791,
               DOI 10.17487/RFC0791, September 1981,
