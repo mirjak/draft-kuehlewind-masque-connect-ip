@@ -287,69 +287,67 @@ when, and only when, they appear in all capitals, as shown here.
 
 # The CONNECT-IP method {#connect-ip-method}
 
-This document defines a new HTTP {{!I-D.ietf-httpbis-semantics}} method CONNECT-IP to
-convert streams into tunnels or initialise HTTP datagram flows
-{{!I-D.ietf-masque-h3-datagram}} to a forwarding proxy.  Each stream can be
-used separately to establish forwarding to potentially
-different remote hosts. Unlike the HTTP CONNECT method, CONNECT-IP
-does not request the proxy to establish a TCP connection to the
-remote target host. Instead the tunnel payload will be forwarded right on top of
-the IP layer, meaning the forwarding proxy has to identify messages boundaries
-to each message before forwarding (see section {{server}}).
+This document defines a new HTTP {{!I-D.ietf-httpbis-semantics}}
+method CONNECT-IP to convert streams into tunnels or initialise HTTP
+datagram flows {{!I-D.ietf-masque-h3-datagram}} to a forwarding proxy.
+Each stream can be used separately to establish forwarding to
+potentially different remote hosts. Unlike the HTTP CONNECT method,
+CONNECT-IP does not request the proxy to establish a TCP connection to
+the remote target host. Instead the tunnel payload will be forwarded
+as individual IP packets (tunnel mode) or right on top of the IP layer
+(flow forwarding), meaning the proxy has to identify
+messages boundaries to each message before forwarding (see section
+{{server}}).
 
-This document specifies CONNECT-IP for HTTP following the same semantics
-as the CONNECT method. As such a CONNECT-IP request MUST be constructed as
-follows:
+This document specifies CONNECT-IP for HTTP following the same
+semantics as the CONNECT method. As such a CONNECT-IP request MUST be
+constructed as follows:
 
 *  The ":method" pseudo-header field is set to "CONNECT-IP"
 
 *  The ":scheme" and ":path" pseudo-header fields are omitted
 
-*  The ":authority" pseudo-header field contains either the host and port to
-   connect to (equivalent to the authority-form of the request-target of
-   CONNECT-UDP {{!I-D.ietf-masque-connect-udp}}
-   or CONNECT requests; see Section 3.2.3 of {{!I-D.ietf-httpbis-messaging}})
-   or the host and port of the proxy if tunnel mode is requested 
+* The ":authority" pseudo-header field contains either the host
+   address to connect to (equivalent to the authority-form of the
+   request-target of CONNECT-UDP {{!I-D.ietf-masque-connect-udp}} or
+   CONNECT requests; see Section 3.2.3 of
+   {{!I-D.ietf-httpbis-messaging}}) or the host and port of the proxy
+   if tunnel mode is requested
 
 A CONNECT request that does not conform to these restrictions is malformed; see
 Section 4.1.3 of {{!I-D.ietf-quic-http}}.
 
 Different to the TCP-based CONNECT, CONNECT-IP does not trigger a
-connection establishment process from the proxy to the target host. Therefore,
-the client does not need to wait for an HTTP response in order to send
-forwarding data. However, the client, especially on tunnel mode, SHOULD
-limit the amount of traffic sent to the proxy before a 2xx (Successful) response
-is received.
+connection establishment process from the proxy to the target
+host. Therefore, the client does not need to wait for an HTTP response
+in order to send forwarding data, unless in tunnel mode and requesting
+assignment of an external IP address. However, the client, especially
+on tunnel mode, SHOULD limit the amount of traffic sent to the proxy
+before a 2xx (Successful) response is received.
 
-The forwarding stays active as long as the respective stream is open. 
-Forwarding data can either directly on the same HTTP stream as the
-CONNECT-IP request, or an HTTP datagram
-encapsulated in a QUIC datagram can be sent (see next section),
-even in the same QUIC packet. To request use of the datagram support,
-the CONNECT-IP request MUST indicate the datagram flow ID in the
-Datagram-Flow-Id Header.
-
-QUESTION: datagram flow IDs are allocated by a flow id allocation service at the
-server in {{!I-D.ietf-masque-h3-datagram}}. However, with CONNECT-IP you can
-always send your first message directly on the same stream right after the
-CONNECT-IP request and sever could provide you a flow ID together with a "2xx"
-response to the CONNECT-IP request. Wouldn't that be easier and faster?
+The forwarding stays active as long as the respective stream is open.
+A Forwarded IP packet can be either an encapsulated HTTP datagram on
+the same HTTP stream as the CONNECT-IP request, or as a HTTP datagram
+sent over QUIC datagram.
 
 ## Data encapsualtion {#encap}
 
-Once the CONNECT-IP method has completed, only CAPSULATE {{!I-D.ietf-masque-h3-datagram}}
-frames are permitted to be sent on that stream.
-Extension frames MAY be used if specifically permitted by
-the definition of the extension.  Receipt of any other known frame type MUST be
-treated as a connection error of type H3_FRAME_UNEXPECTED.
+Once the CONNECT-IP method has completed, only CAPSULATE
+{{!I-D.ietf-masque-h3-datagram}} frames are permitted to be sent on
+that stream.  Extension frames MAY be used if specifically permitted
+by the definition of the extension.  Receipt of any other known frame
+type MUST be treated as a connection error of type
+H3_FRAME_UNEXPECTED.
 
-Each HTTP CAPSULATE frame MUST contain the either a full IP packet or only 
-payload of one IP packet depending on the requested forwadring mode.
+Each HTTP Datagram frame contains one of the below specified data
+formats ({{datagram-formats}}) depending on request forwarding mode and
+given headers and paramters. 
 
-Stream based forwadring provides in-order and reliable delivery but may introduce Head
-of Line (HoL) Blocking if independent messages are send over the same CONNECT-IP
-association. On streams payload data is encapsulated in the CAPSULATE Frame
-using the DATAGRAM capsule (type=0x02) {{!I-D.ietf-masque-h3-datagram}}.
+Stream based forwadring provides in-order and reliable delivery but
+may introduce Head of Line (HoL) Blocking if independent messages are
+send over the same CONNECT-IP association. On streams payload data is
+encapsulated in the CAPSULATE Frame using the DATAGRAM capsule
+(type=0x02) {{!I-D.ietf-masque-h3-datagram}}.
 
 The client can, in addition to stream-based forwarding, request
 use of HTTP/3 datagrams {{!I-D.ietf-masque-h3-datagram}}.
@@ -360,16 +358,44 @@ Datagram suppot MUST only be requested when
 the QUIC datagram extension {{!I-D.ietf-quic-datagram}} was
 successfully negotiated during the QUIC handshake.
 
-Datagrams provide un-order and unreliable delivery. In theory both, stream-
-as well as datagram-based forwarding, can be used in parallel, however, for most
-transmissions it is expected to only use one.
+Datagrams provide un-ordered and unreliable delivery. In theory both,
+stream- as well as datagram-based forwarding, can be used in parallel,
+however, for most transmissions it is expected to only use one.
 
-While IP packets sent over streams only have to respect the end-to-end MTU
-between the client and the target server, packets sent in datagrams are further
-restricted by the QUIC packet size of the QUIC tunnel and any overhead within
-the QUIC tunnel packet. The proxy should provide MTU and overhead information to the client.
-The client MUST take this overhead into account when indicating the MTU to the
+While IP packets sent over streams only have to respect the end-to-end
+MTU between the client and the target server, packets sent in
+datagrams are further restricted by the QUIC packet size of the QUIC
+tunnel and any overhead within the QUIC tunnel packet. The proxy
+should provide MTU and overhead information to the client.  The client
+MUST take this overhead into account when indicating the MTU to the
 application.
+
+## Datagram Formats {#datagram-formats}
+
+This section defined the different datagram formats used by
+Connect-IP. Even if only one format is currently used it is expected
+that for some usages future extension may require the flexibility to
+use multiple different formats for a given CONNECT-IP request. 
+
+### Tunnel Mode IPv4 Format
+
+The Datagram contains one full IPv4 Packet per {{!RFC0791}}. Used in
+tunnel mode and when the IP Version is 4 per the IP-Version header or
+explicit given target address.
+
+### Tunnel Mode IPv6 Format
+
+The Datagram contains one full IPv6 Packet per {{!RFC8200}}. Used in
+tunnel mode and when the IP Version is 6 per the IP-Version header or
+explicit given target address.
+
+### Flow Forwarding Format
+
+The Datagram contains only the IP payload. This is defined as the
+payload following the IPv4 header and any options for IPv4, and for
+IPv6 as the payload following the IPv6 header and any extension
+header. Used for Flow Forwarding mode. 
+
 
 # Requesting flow forwarding {#client}
 
