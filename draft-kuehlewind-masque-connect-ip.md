@@ -1,6 +1,6 @@
 ---
 docname: draft-kuehlewind-masque-connect-ip-latest
-title: The CONNECT-IP method for proxying IP traffic
+title: The CONNECT-IP HTTP method for proxying IP traffic
 abbrev: CONNECT-IP method
 ipr: trust200902
 category: std
@@ -47,8 +47,10 @@ normative:
     I-D.ietf-quic-http:
     I-D.ietf-quic-datagram:
     I-D.ietf-httpbis-messaging:
+    I-D.ietf-httpbis-semantics:
     I-D.schinazi-quic-h3-datagram:
     I-D.schinazi-masque-connect-udp:
+
 
 
 informative:
@@ -59,7 +61,7 @@ informative:
 
 --- abstract
 
-This draft specifies a new HTTP/3 method CONNECT-IP to proxy IP
+This draft specifies a new HTTP method CONNECT-IP to proxy IP
 traffic. CONNECT-IP uses HTTP/3 Datagrams to use QUIC Datagrams for
 efficient transport of tunneled or proxied IP packets, with the
 possibility to fallback to HTTP/3 over relibale QUIC streams, or even
@@ -285,7 +287,7 @@ when, and only when, they appear in all capitals, as shown here.
 
 # The CONNECT-IP method {#connect-ip-method}
 
-This document defines a new HTTP/3 {{!I-D.ietf-quic-http}} method CONNECT-IP to
+This document defines a new HTTP {{!I-D.ietf-httpbis-semantics}} method CONNECT-IP to
 convert streams into tunnels or initialise HTTP datagram flows
 {{!I-D.schinazi-quic-h3-datagram}} to a forwarding proxy.  Each stream can be
 used separately to establish forwarding to potentially
@@ -295,7 +297,7 @@ remote target host. Instead the tunnel payload will be forwarded right on top of
 the IP layer, meaning the forwarding proxy has to identify messages boundaries
 to each message before forwarding (see section {{server}}).
 
-This document specifies CONNECT-IP only for HTTP/3 following the same semantics
+This document specifies CONNECT-IP for HTTP following the same semantics
 as the CONNECT method. As such a CONNECT-IP request MUST be constructed as
 follows:
 
