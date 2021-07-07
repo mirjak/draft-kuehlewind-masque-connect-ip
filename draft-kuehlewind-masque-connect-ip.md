@@ -116,32 +116,32 @@ destination address with an error message.
 In flow forwarding mode the CONNECT-IP method establishes an outgoing
 IP flow, from the MASQUE server's external address to the target
 server's address specified by the client for a particular upper layer
-protocol. This mode also enables reception and relaying of the
-reverse IP flow from the target address to the MASQUE server to ensure
-that return traffic can be received by the client.  However, it does
-not support flow establishment by an external peer.  This
-specification supports forwarding of incoming traffic to one of the
-clients only if an active mapping has previously been created based on
-an IP-CONNECT request. Clients that need to support flow established
+protocol. This mode also enables reception and relaying of the reverse
+IP flow from the target address to the MASQUE server to ensure that
+return traffic can be received by the client.  However, it does not
+support flow establishment by an external peer.  This specification
+supports forwarding of incoming traffic to one of the clients only if
+an active mapping has previously been created based on an IP-CONNECT
+request. Clients that need to support reception of flows established
 by external peer need to use tunnel mode.
 
 This mode covers the point-to-point use case and allows for flow-based
-optimizations.  The target IP address is provided by the client as
-part of the CONNECT-IP request. The sources address is eiter
-independently selected by the proxy or can be requested to be either the same
-as used in a previous and currently active CONNECT-IP request
-or different from currently requests by the same client. The client also
-indicates the upper layer protocol, thus defining the three tuple
-used as primary selector for the flow.
+optimizations and a larger effective maximum packet size. The target
+IP address is provided by the client as part of the CONNECT-IP
+request. The sources address is eiter independently selected by the
+proxy or can be requested to be either the same as used in a previous
+and currently active CONNECT-IP request or different from currently
+requests by the same client. The client also indicates the upper layer
+protocol, thus defining the three tuple used as primary selector for
+the flow.
 
 In this mode the payload between the client and proxy does not contain
 the IP header in order to reduce overhead. Any additional information
-(other than the source and destination IP addresses and ports as well as 
-the upper layer protocol identifier) that is
-needed to construct the IP header or to inform the client about
-information from received IP packets can be signalled as part of the
-CONNECT-IP requst or using HTTP CAPSULATE frames
-{{!I-D.schinazi-quic-h3-datagram}} later.
+(other than the source and destination IP addresses and ports as well
+as the upper layer protocol identifier) that is needed to construct
+the IP header or to inform the client about information from received
+IP packets can be signalled as part of the CONNECT-IP requst or using
+HTTP/3 Datagram {{!I-D.schinazi-quic-h3-datagram}} later.
 
 As such, in flow forwarding mode usually one upper-layer end-to-end
 connection is associated to one CONNECT-IP forwarding
@@ -150,12 +150,12 @@ forwadring association for multiple end-to-end connections to the same
 target server, as long as they all require the same Protocol (IPv4) /
 Next Header (IPv6) value, this would lead to the use of the same flow
 ID for all connections. As such this is not recommended for
-connection-oriented transmissions. In order to enable multiple
-flow forwadring asssociation to the same server, the flow forwading
-mode supports a way to specify
-some additional upper layer protocol selectors, e.g. TCP source and
-destination port, to enable multiple CONNECT-IP request for the same
-three tuple. 
+connection-oriented transmissions. In order to enable multiple flow
+forwadring asssociation to the same server, the flow forwading mode
+supports a way to specify some additional upper layer protocol
+selectors, e.g. TCP source and destination port, to enable multiple
+CONNECT-IP request for the same three tuple, see CONN-ID header
+{{conn-id-header}}.
 
 This proposal is based on the analysis provided in
 {{?I-D.westerlund-masque-transport-issues}} indicating that most
@@ -175,7 +175,7 @@ Required to be determined in Connect-IP request and response:
   
   * IP Destination Address (target address)
   
-  * Upper Layer Protocol (IPv4 Protocol Field / IPv6 Next Header field)
+  * Upper Layer Protocol (IPv4 Protocol field / IPv6 Next Header field)
 
 Can be chosen by Proxy on transmission:
 
@@ -183,7 +183,7 @@ Can be chosen by Proxy on transmission:
   
   * IPv4 Time to live / IPv6 Hop Limit (proxy configured)
   
-  * Diffserv Codepoint set to 0 (Best Effort)
+  * Diffserv Codepoint per default set to 0 (Best Effort)
 
 May optionally be provided on a per packet basis
 
@@ -193,7 +193,7 @@ The consequence of this is certain limitations that future extension
 can address. For packets that are sent from the target server to the client,
 the clieent will not get any information on the actual value of TTL/Hop Count,
 DSCP, or flow label when received by the proxy. Instead these field are
-set and consumed by the prroxy only.
+set and consumed by the proxy only.
 
 Signalling of other dedicated values may be desired in certain
 deployments, e.g for DCSP {{RFC2474}}.  However, DSCP is in any case a
@@ -208,8 +208,10 @@ extensible.
 
 The chosen IP flow model is selected due to several advantages:
 
-  * Minimized per packet overhead: The per packet overhead is reduced to basic
-    framing of the IP payload for each IP packet and flow identifiers.
+  * Minimized per packet overhead: The per packet overhead is reduced
+    to basic framing of the IP payload for each IP packet and flow
+    identifiers. This enables a larger effective Maximum Transmission
+    Unit (MTU) than tunnel mode.
 
   * Shared functionality with CONNECT-UDP: The UDP flow proxying functionality
     of CONNECT-UDP will need to establish, store and process the same IP header
@@ -410,7 +412,7 @@ active flow forwarding association. Its ABNF is:
   IP-Address-Handling = sf-integer
 ~~~
 
-## Conn-ID Header for CONNECT-IP
+## Conn-ID Header for CONNECT-IP {#conn-id-header}
 
 This document further defines a new header field to be used with CONNECT-IP
 "Conn-ID". The Conn-ID HTTP header field indicates the value, offset, and
