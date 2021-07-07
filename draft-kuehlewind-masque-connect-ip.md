@@ -49,7 +49,7 @@ normative:
     I-D.ietf-httpbis-messaging:
     I-D.schinazi-quic-h3-datagram:
     I-D.schinazi-masque-connect-udp:
-    I-D.ietf-httpbis-header-structure:
+
 
 informative:
    RFC0792:
@@ -60,16 +60,19 @@ informative:
 --- abstract
 
 This draft specifies a new HTTP/3 method CONNECT-IP to proxy IP
-traffic.  CONNECT-IP can be used to convert a QUIC stream into a
-tunnel or initialise an HTTP datagram association to a forwarding
-proxy.  CONNECT-IP supports two modes: a pure tunneling mode where
-packets are forwarded without modifications and flow forwarding mode
-which supports optimiation for individual IP flows forwarded to
-decicated target servers.  To request tunneling or forwarding, a
-client connects to a proxy server by initiating a HTTP/3 connection
-and sends a CONNECT-IP which either indicates the address of the proxy
-or the target server. The proxy then forwards payload received on that
-stream or in an HTTP datagram with a certain flow ID.
+traffic. CONNECT-IP uses HTTP/3 Datagrams to use QUIC Datagrams for
+efficient transport of tunneled or proxied IP packets, with the
+possibility to fallback to HTTP/3 over relibale QUIC streams, or even
+HTTP 1.x and 2.
+
+CONNECT-IP supports two modes: a tunneling mode where IP packets are
+forwarded without modifications and flow forwarding mode which
+supports optimiation for individual IP flows forwarded to the targeted
+peer. To request tunneling or forwarding, a client connects to a proxy
+server by initiating a HTTP/3 connection and sends a CONNECT-IP
+request which either indicates the address of the proxy or the target
+peer. The proxy then forwards payload received on that stream or in
+an HTTP datagram with a certain stream ID.
 
 --- middle
 
