@@ -400,7 +400,7 @@ can be requested by the client to use the same IP address. This header can also 
 used to ensure that a "new", not yet for this client used address is selected by
 setting a value that is larger than the maximum stream ID.
 
-IP-Protocol is a Item Structured Header {{RFC8941}}.
+IP-Address-Handling is a Item Structured Header {{RFC8941}}.
 Its value MUST be an Integer and indicates the stream ID of the corresponding
 active flow forwarding association. Its ABNF is:
 
@@ -479,6 +479,8 @@ to be sent.
   IP-Address = sf-string
 ~~~
 
+Note: Header is also used in flow forwarding responses to indicate
+assigned IP address.
 
 # MASQUE server behavior {#server}
 
