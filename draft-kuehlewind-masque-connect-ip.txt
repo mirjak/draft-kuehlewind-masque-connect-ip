@@ -10,12 +10,12 @@ Expires: 8 January 2022                                        Z. Sarker
                                                              7 July 2021
 
 
-             The CONNECT-IP method for proxying IP traffic
+           The CONNECT-IP HTTP method for proxying IP traffic
                draft-kuehlewind-masque-connect-ip-latest
 
 Abstract
 
-   This draft specifies a new HTTP/3 method CONNECT-IP to proxy IP
+   This draft specifies a new HTTP method CONNECT-IP to proxy IP
    traffic.  CONNECT-IP uses HTTP/3 Datagrams to use QUIC Datagrams for
    efficient transport of tunneled or proxied IP packets, with the
    possibility to fallback to HTTP/3 over relibale QUIC streams, or even
@@ -318,7 +318,7 @@ Table of Contents
 
 2.  The CONNECT-IP method
 
-   This document defines a new HTTP/3 [I-D.ietf-quic-http] method
+   This document defines a new HTTP [I-D.ietf-httpbis-semantics] method
    CONNECT-IP to convert streams into tunnels or initialise HTTP
    datagram flows [I-D.schinazi-quic-h3-datagram] to a forwarding proxy.
    Each stream can be used separately to establish forwarding to
@@ -329,7 +329,7 @@ Table of Contents
    has to identify messages boundaries to each message before forwarding
    (see section Section 5).
 
-   This document specifies CONNECT-IP only for HTTP/3 following the same
+   This document specifies CONNECT-IP for HTTP following the same
    semantics as the CONNECT method.  As such a CONNECT-IP request MUST
    be constructed as follows:
 
@@ -707,6 +707,13 @@ Normative References
               httpbis-messaging-16, 27 May 2021,
               <https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-
               messaging-16>.
+
+   [I-D.ietf-httpbis-semantics]
+              Fielding, R. T., Nottingham, M., and J. Reschke, "HTTP
+              Semantics", Work in Progress, Internet-Draft, draft-ietf-
+              httpbis-semantics-16, 27 May 2021,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-
+              semantics-16>.
 
    [I-D.ietf-masque-h3-datagram]
               Schinazi, D. and L. Pardue, "Using QUIC Datagrams with
