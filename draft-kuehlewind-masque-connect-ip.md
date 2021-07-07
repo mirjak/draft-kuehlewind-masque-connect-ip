@@ -48,8 +48,8 @@ normative:
     I-D.ietf-quic-datagram:
     I-D.ietf-httpbis-messaging:
     I-D.ietf-httpbis-semantics:
-    I-D.schinazi-quic-h3-datagram:
-    I-D.schinazi-masque-connect-udp:
+    I-D.ietf-masque-h3-datagram:
+    I-D.ietf-masque-connect-udp:
 
 
 
@@ -143,7 +143,7 @@ the IP header in order to reduce overhead. Any additional information
 as the upper layer protocol identifier) that is needed to construct
 the IP header or to inform the client about information from received
 IP packets can be signalled as part of the CONNECT-IP requst or using
-HTTP/3 Datagram {{!I-D.schinazi-quic-h3-datagram}} later.
+HTTP/3 Datagram {{!I-D.ietf-masque-h3-datagram}} later.
 
 As such, in flow forwarding mode usually one upper-layer end-to-end
 connection is associated to one CONNECT-IP forwarding
@@ -289,7 +289,7 @@ when, and only when, they appear in all capitals, as shown here.
 
 This document defines a new HTTP {{!I-D.ietf-httpbis-semantics}} method CONNECT-IP to
 convert streams into tunnels or initialise HTTP datagram flows
-{{!I-D.schinazi-quic-h3-datagram}} to a forwarding proxy.  Each stream can be
+{{!I-D.ietf-masque-h3-datagram}} to a forwarding proxy.  Each stream can be
 used separately to establish forwarding to potentially
 different remote hosts. Unlike the HTTP CONNECT method, CONNECT-IP
 does not request the proxy to establish a TCP connection to the
@@ -307,7 +307,7 @@ follows:
 
 *  The ":authority" pseudo-header field contains either the host and port to
    connect to (equivalent to the authority-form of the request-target of
-   CONNECT-UDP {{I-D.schinazi-masque-connect-udp}}
+   CONNECT-UDP {{!I-D.ietf-masque-connect-udp}}
    or CONNECT requests; see Section 3.2.3 of {{!I-D.ietf-httpbis-messaging}})
    or the host and port of the proxy if tunnel mode is requested 
 
@@ -330,7 +330,7 @@ the CONNECT-IP request MUST indicate the datagram flow ID in the
 Datagram-Flow-Id Header.
 
 QUESTION: datagram flow IDs are allocated by a flow id allocation service at the
-server in {{!I-D.schinazi-quic-h3-datagram}}. However, with CONNECT-IP you can
+server in {{!I-D.ietf-masque-h3-datagram}}. However, with CONNECT-IP you can
 always send your first message directly on the same stream right after the
 CONNECT-IP request and sever could provide you a flow ID together with a "2xx"
 response to the CONNECT-IP request. Wouldn't that be easier and faster?
