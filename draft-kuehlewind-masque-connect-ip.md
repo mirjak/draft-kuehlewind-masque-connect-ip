@@ -316,8 +316,8 @@ is received.
 
 The forwarding stays active as long as the respective stream is open. 
 Forwarding data can either directly on the same HTTP stream as the
-CONNECT-IP request (see Section {{stream}}), or an HTTP datagram
-encapsulated in a QUIC datagram can be sent (see Section {{datagram}}),
+CONNECT-IP request, or an HTTP datagram
+encapsulated in a QUIC datagram can be sent (see next section),
 even in the same QUIC packet. To request use of the datagram support,
 the CONNECT-IP request MUST indicate the datagram flow ID in the
 Datagram-Flow-Id Header.
@@ -328,29 +328,28 @@ always send your first message directly on the same stream right after the
 CONNECT-IP request and sever could provide you a flow ID together with a "2xx"
 response to the CONNECT-IP request. Wouldn't that be easier and faster?
 
-## Stream-based forwarding {#stream}
+## Data encapsualtion {#encap}
 
-Once the CONNECT-IP method has completed, only DATA and CAPSULATE {{!I-D.schinazi-quic-h3-datagram}}
+Once the CONNECT-IP method has completed, only CAPSULATE {{!I-D.ietf-masque-h3-datagram}}
 frames are permitted to be sent on that stream.
 Extension frames MAY be used if specifically permitted by
 the definition of the extension.  Receipt of any other known frame type MUST be
 treated as a connection error of type H3_FRAME_UNEXPECTED.
 
-Each HTTP DATA frame MUST contain the either a full IP packet or only 
+Each HTTP CAPSULATE frame MUST contain the either a full IP packet or only 
 payload of one IP packet depending on the requested forwadring mode.
 
 Stream based forwadring provides in-order and reliable delivery but may introduce Head
 of Line (HoL) Blocking if independent messages are send over the same CONNECT-IP
-association.
+association. On streams payload data is encapsulated in the CAPSULATE Frame
+using the DATAGRAM capsule (type=0x02) {{!I-D.ietf-masque-h3-datagram}}.
 
-## Datagram-based fowarding {#datagram}
+The client can, in addition to stream-based forwarding, request
+use of HTTP/3 datagrams {{!I-D.ietf-masque-h3-datagram}}.
 
-The client can, in addition to stream-based forwadring, request
-use of HTTP/3 datagrams {{!I-D.schinazi-quic-h3-datagram}}.
-
-To request datagram support the client adds an Datagram-Flow-Id Header to the
-CONNECT-IP request as specified for CONNECT-UDP in
-{{I-D.schinazi-masque-connect-udp}}.  Datagram suppot MUST only be requested when
+To request datagram support the client sends H3_DATAGRAM SETTINGS
+parameter with a value of 1 {{!I-D.ietf-masque-h3-datagram}}.
+Datagram suppot MUST only be requested when
 the QUIC datagram extension {{!I-D.ietf-quic-datagram}} was
 successfully negotiated during the QUIC handshake.
 
@@ -569,6 +568,10 @@ based forwarding is supported, it is recommended for the proxy to use the same e
 client or datagrams as default. Further considerations might be needed heree.
 
 # Additional signalling
+
+Context ID as defined by {{!I-D.ietf-masque-h3-datagram}} can be used to provide additional
+per association or per-payload signals. As {{!I-D.ietf-masque-h3-datagram}} is still work
+in progress, registration and use of Context IDs is left for future work at this point.
 
 ## ECN {#ECN}
 
