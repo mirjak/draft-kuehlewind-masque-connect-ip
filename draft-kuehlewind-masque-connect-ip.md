@@ -507,6 +507,26 @@ these parameter are not present.
 This function can be used to e.g. indicate the source port field in
 the IP payload when containing a TCP packet.
 
+## MTU Header for CONNECT-IP {#MTU-Header}
+
+This document defines a new HTTP request and response header to be
+used with the CONNECT-IP method. The MTU HTTP header indicates the
+largest IP packet size the requesting or responding node is capable of
+forwarding without fragmentation related to the target of the
+CONNECT-IP request.
+
+An HTTP Intermediary that process this header should update the header
+to a lower value if its effective MTU is less than the value in the
+MTU header. However, an HTTP intermediary MUST NOT increase the value.
+
+MTU is a Item Structured Header {{RFC8941}}.  Its value MUST be an
+Integer and indicates the number of bytes of the effective IP MTU.
+
+~~~
+  MTU = sf-integer
+~~~
+
+
 # Client Connect-IP Request
 
 ## Requesting flow forwarding {#client}
@@ -701,7 +721,108 @@ Context IDs can be used to forward if requested.
 
 ## MTU considerations
 
-TBD
+For the MTU Discussion we need to update the figure for the involved
+nodes as given in {fig-node-model}. Instead we will use the below
+figure {{fig-mtu-model}}. 
+
+~~~
++--------+        +--------+        +-------+        +--------+
+|        | Path#1 | HTTP   | Path#2 |       | Path#3 |        |
+| Client |<------>| Inter- |<------>| Proxy |<------>| Target |
+|        |        | mediary|        |       |        |        |
++--------+        +--------+        +-------+        +--------+
+~~~
+{: #fig-mtu-model title="Nodes relevant in MTU discussion"}
+
+In this figure the HTTP request and response are done between the
+Client and Proxy. However, the HTTP/3 connection from the client is
+terminated in an HTTP Intermediary, that forwards the request to the
+proxy over a second HTTP connection.
+
+For CONNECT-IP there are several aspects that decides the effective
+end-to-end MTU for IP packets going from the client to the
+target. These aspects are:
+
+  * The supported QUIC datagram size between Client and the HTTP
+    Intermediary on Path#1. This is limited by the actual IP MTU on
+    the IP path between these nodes as well as the configuration of
+    the QUIC endpoints. The IP MTU is first limited by the respective
+    nodes Interfaces, which is known by each node. Next by the link
+    layers and routers on Path#1 that may restrict the MTU, this value
+    is normally now well known, and need to be determined. Finally,
+    the QUIC endpoints will have their internal limits for how big
+    IP/UDP/QUIC packets they will send, and these limits are impacted
+    by implementation, as well as the QUIC transport parameter
+    "max_udp_payload_size".
+
+  * Next is the question what datagram size will be supported between
+    the HTTP Intermediary and the Proxy on Path#2. This has the same
+    set of limiations as for Path#1 in case QUIC is used between them.
+    However, it is not guaranteed that HTTP/3 is used on this path,
+    thus other limiations may be in place. However, if HTTP 1.x or
+    HTTP/2 are used then a reliable byte stream oriented transport
+    will be used and thus these does not provide any stric limit on
+    the supporte HTTP datagram sizes that can be passed.
+
+  * Next is the IP MTU for the Proxy's external interface that will be
+    used to send any IP packet to the Target. This value is known by
+    the proxy.
+
+  * Finally is the IP MTU of Path#3 and the receiving interface at
+    Target. Once more a value that is not well know, and instead
+    learned through ICMP Packet Too Big or other PMTUD methods.
+
+The IP MTU limits of the two last are hard limits and will impact the
+transmitted end-to-end IP packets. Either being forced to be
+fragmented (IPv4 without Don't framgent bit set), or dropped (IPv6 or
+IPv4 with DF set).
+
+One possible stand point here could be that client and targets
+end-to-end communication would be required to rely on Path MTU
+Discovery (PMTUD) without any support. However, I think it is worth
+considering the issues and impact of not provide support that can
+speed up convergence on end-to-end IP MTU.
+
+The two first paths MTU are primarily performance impacting as one
+like to ensure that the IP packets or IP payloads (flow forwarding)
+fits within one HTTP Datagram that in its turn fits in a QUIC Datagram
+where available. If they don't fit the HTTP node will have to forward
+the HTTP Datagram in a CAPSULE over a relaible stream. This last is a
+necessary functionality to ensure that HTTP/3 over an path that only
+supports minimal IPv6 Size can tunnel or forward end-to-end IPv6
+packets of the minimal 1280 size.
+
+With the possibility of multipe HTTP intermediaries between client and
+proxy it is necessary to have an HTTP level mechanism to signal at
+least an intially known MTU for the HTTP Datagram path between client
+and proxy. This enables the proxy to also to take its external IP
+interfaces MTU, or any cached MTU restirction on the path to the
+target for a specific CONNECT-IP request. For this purpose a new HTTP
+header, named MTU is defined ({{MTU-Header}}.
+
+As a complement to the HTTP MTU header, a client could support
+receiving ICMP messages, like Packet Too Big (PTB). This would enable
+the client to adjust its end-to-end IP MTU in cases where PTB messages
+are received by proxy for packets to the target on the proxy to target
+path (Path#3).
+
+This leaves one set of remaining issue not resolved. If the IP MTU
+changes on Path#1 and Path#2 this could force an HTTP node to be
+forced to send the HTTP datagrams using CAPSULE over reliable stream
+to use the fragmentation on the byte stream. This is not a problem
+necessary to solve, however due to the use of reliable streams the
+endpoint will not have any clear signal that there is an MTU problem
+on these paths. Instead it will only manifest itself as a performance
+impact.
+
+QUESTION: Maybe HTTP Datagrams should define a MTU signalling CAPSULE
+which would enable the HTTP Intermediaries to also initiate this
+message in relation to a stream. 
+
+QUESTION 2: There exist some possibility to avoid requiring the HTTP
+MTU header if an HTTP Datagram MTU Capsule would be defined that
+HTTP intermediaries may initiate and modify. 
+
 
 # Examples
 
@@ -749,6 +870,9 @@ This document (if published as RFC) registers the following header in the
   +---------------------+----------+--------+---------------+
   | IP-Verison          |   http   |  exp   | This document |
   +---------------------+----------+--------+---------------+
+  | MTU                 |   http   |  exp   | This document |
+  +---------------------+----------+--------+---------------+
+
 ~~~
 
 # Acknowledgments {#acknowledgments}
