@@ -40,10 +40,13 @@ author:
 
 normative:
     RFC0791:
+    RFC0792:
     RFC2119:
     RFC3168:
+    RFC4443:
     RFC8174:
     RFC8200:
+    RFC9000:
     I-D.ietf-quic-http:
     I-D.ietf-quic-datagram:
     I-D.ietf-httpbis-messaging:
@@ -52,11 +55,9 @@ normative:
     I-D.ietf-masque-connect-udp:
 
 
-
 informative:
-   RFC0792:
    RFC2474:
-   RFC4443:
+
 
 
 --- abstract
@@ -396,6 +397,19 @@ payload following the IPv4 header and any options for IPv4, and for
 IPv6 as the payload following the IPv6 header and any extension
 header. Used for Flow Forwarding mode. 
 
+### ICMP Message Format {#ICMP-message-format}
+
+This datagram contains a summary message of the ICMP message received
+and validated to relate to this IP flow. The message format carries
+the ICMP packet for ICMPv4 {{RFC0792}} or ICMPv6 {{RFC4443}}. This
+format is chosen for forward compatibilty. From a implementation
+perspective the client don't need to verify the checksum or validate
+the header fields becasue that is done by the server. However, some
+type codes, like IMCPv4 type 2, (Packet Too Big) carries an MTU field
+that the implementation want to read beyond understanding the meaning
+of the type and code combination.
+
+
 # HTTP Headers
 
 Note: This section should be improved by clarifying if headers are
@@ -681,23 +695,60 @@ in progress, registration and use of Context IDs is left for future work at this
 
 ## ECN {#ECN}
 
-ECN requires coordination with the end-to-end communication points as it should only be
-used if the endpoints are also capable and willing to signal congestion
-notifications to the other end and react accordingly if a congestion
-notification is received. 
+ECN requires coordination with the end-to-end communication points as
+it should only be used if the endpoints are also capable and willing
+to signal congestion notifications to the other end and react
+accordingly if a congestion notification is received.
 
-Therefore, if ECN is used, the proxy needs to inform the client of a
-congestion notification (IP CE codepoint) was observed in any IP header of a
-received packet from the target server.
+The probing and verification in the ULP of end-to-end ECN requires per
+packet control over what value is set on IP packet transmission as
+well as which of all values are received by the proxy. The QUIC
+specification is providing one such example in Section 13.4 of
+{{RFC9000}}. Thus in flow forwarding mode the proxy needs to be able
+to set and read the ECN values in sent and received IP packets
+respecitively. This may motivate that this functionality is optional
+to implement, even if supporting CONNECT-IP implementations in general
+will need to handle IP packets and their fields with fine grained
+control. If optional some negotiation mechanism is needed. 
 
-Possible realizations are: a) always have two bits before payload 
-in flow forwarding model or use 4 different context IDs. This is work in
-process and will be further specified in a future version of this document.
+Possible realizations are:
+
+  a) always have two bits before payload in flow forwarding model,
+  e.g. by including the whole TOS byte, which would also enable DSCP
+  setting and reading.
+
+  b) use 4 different context IDs depending on what ECN field value was
+  received or should be set.
+
+This is work in process and will be further specified in a future
+version of this document.
+
 
 ## ICMP handling {#ICMP}
 
-ICMP messages are directly forwarded in tunneling mode. In flow forwarding mode 
-Context IDs can be used to forward if requested.
+ICMP messages are directly forwarded in tunneling mode. In flow
+forwarding mode a ICMP datagram format ({{ICMP-message-format}}) is
+used to send the information from some ICMP message to the client. 
+
+The proxy upon receiving an ICMP message with a destination of an IP
+address it performs flow forwarding on it needs to process the ICMP
+message. First it should validate that the ICMP message and find if it
+matches any of its IP flow selectors (including Conn-ID). In case
+there are multiple matching use the IP selector with the most number
+of field that matches fully.
+
+Some messages may be applicable both to the proxy and the client. For
+example an verified ICMPv6 Packet Too Big is applicable both to the
+proxy and the client. Others like ICMPv6 Destiantion Unreachable
+(Type=1), Code=3 (Address unreachable) and Code=4 (Port unreachable)
+is only possible to act on by the client.
+
+QUESTION: Any ICMP messages that should be suppressed by the proxy?
+
+If a matching IP selector was chosen, then lookup the mapping for the
+HTTP connection and Stream ID which this message should be sent
+to. Encapsulate the recevied ICMP message in the ICMP datagram format
+and send it to the client.
 
 ## MTU considerations
 
