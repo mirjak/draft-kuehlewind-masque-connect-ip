@@ -531,19 +531,44 @@ header to request use of an IP addres or IP address range.
 
 # MASQUE server behavior {#server}
 
-A MASQUE server that receives an IP-CONNECT request, opens a raw
-socket and creates state to map a connection identifier, which might
-be a tuple, to a target IP address. Once this is successfully
-established, the proxy sends a HEADERS frame containing a 2xx series
-status code to the client. To indicate support of datagrams, if
-requested by the client, the MASQUE server sends H3_DATAGRAM SETTINGS
-parameter with a value of 1.
-The response MAY contain and IP-Address header indicating
-the outgoing IP address or IP address range selected by the proxy.
+Upon the establishment of a HTTP Connection with the proxy on its
+service addresses. HTTP level capabilities will be exchanged in the
+HTTP SETTINGS frame. This will determine if support of datagrams is
+indicated. If indicated by the client, the MASQUE server SHALL send a
+H3_DATAGRAM SETTINGS parameter with a value of 1 to indicates is
+support.
 
-All DATA frames received on that stream as well as all HTTP/3
-datagrams belonging to this CONNECT-IP asociation are forwarded to the
-target server.
+A MASQUE server that receives an IP-CONNECT request examines the
+target URL to determine if this request is for tunnel or flow
+forwarding mode. Based on the mode it determines if the required
+headers are present and which of the optional headers that are
+included.
+
+The proxy maintains a database with mappings between the HTTP
+connections and stream IDs and the IP level selectors and Conn-ID
+information. Using this database and the pool of available addresses
+and the requests IP-Address-Handling, Conn-ID, IP-Version, IP-Address
+headers (if included) to select a source IP address. This selection
+for flow forwarding mode is further discussed below in
+{{flow-address-selection}}. For Tunnel Mode, the proxy determine if
+the proposed IP address per IP-Version and IP-Address headers is
+possible to use if included, else selects a otherwise unusued address
+from its pool. For tunnel mode the IP selector for incoming traffic
+for this HTTP Connection and Stream ID is simply the IP destination
+address.
+
+Once the mapping is successfully established, the proxy sends a
+HEADERS frame containing a 2xx series status code to the client.  The
+response MUST contain an IP-Address header indicating the outgoing
+source IP address or IP address range selected by the proxy.
+
+All Datagram capsules received on that stream as well as all HTTP/3
+datagrams belonging to this CONNECT-IP association are processed for
+forwarding to the target server. For flow forwarding mode the Datagram
+is processed as specified in {{IP-header}} to produce IP packets that
+can be forwarded. For tunnel-mode the complete IP packet are extracted
+from the Datagram and then forwarded as specified in
+{{tunnel-decapsulation}}.
 
 IP packets received from the target server are mapped to an active
 forwarding connection and are respectively forwarded in an CAPSULE
@@ -554,31 +579,45 @@ DATAGRAM frame or HTTP/3 datagram to the client (see section
 
 TBD (e.g. out of IP address, conn-id collision)
 
-## IP address selection in flow forwarding mode
+## IP address selection in flow forwarding mode {#flow-address-selection}
 
-In flow forwarding modee the proxy constructs the IP header when sending the IP payload towards the
-target server and it selects an source IP address from its pool of IP address
-that are routed to the MASQUE server.
+In flow forwarding mode the proxy constructs the IP header when
+sending the IP payload towards the target server and it selects an
+source IP address from its pool of IP addresses that are routed to the
+MASQUE server.
 
-If no additional information about a payload field that can be used as an
-identifier based on Conn-ID header is provided by the client, the masque server
-uses the source/destination address 2-tuple in order to map an incoming IP
-packet to an active forwarding connection. As such the MASQUE proxy MUST select
-a source IP address that leads to a unique tuple. The same IP address can be
-used for different clients when those client connect to different target servers,
-however, this also means that potentially multiple IP address are used for the
-same client when multiple connection to one target server are needed. This can
-be problematic if the source address is used by the target server as an
-identifier.
+If no additional information about a payload field that can be used as
+an identifier based on Conn-ID header is provided by the client, the
+masque server uses the source/destination address and protocol ID
+3-tuple in order to map an incoming IP packet to an active forwarding
+connection. The proxy MUST also consider if IP-Address-Handling header
+{{IP-Address-Handling}} is included and its value. If the
+IP-Address-Handling header is not included and the there has been
+prior request the proxy SHOULD give the client the same source Address
+as the first flow forwarding request.  Given these constraints the
+MASQUE proxy MUST select a source IP address that leads to a unique
+tuple, and if that is not possible an error response is generated. The
+same IP address MAY be used for different clients when those client
+connect to different target servers. However, this also means that
+potentially multiple IP address are used for the same client when
+multiple connection to one target server are needed. This can be
+problematic if the source address is used by the target as an
+identifier. Therefore it is RECOMMENDED that clients are given unique
+addresses unless a large fraction of the pool has been exhausted.
 
-If the Conn-ID header is provided, the MASQUE server should use that field as an
-connection identifier together with source and destination address, as a
-3-tuple. In this case it is recommended to use a stable IP address for each
-client, while the same IP address might still be used for multiple clients, if
-not indicated differently by the client in the configuration file. Note that if
-the same IP address is used for multiple clients, this can still lead to an
-identifier collision and the IP-CONNECT request MUST be reject if such a
-collision is detect.
+If the Conn-ID header is provided, the MASQUE server should use that
+field as an connection identifier together with protocol ID, source
+and destination address, as a 4-tuple. In this case it is recommended
+to use a stable IP address for each client, while the same IP address
+might still be used for multiple clients, if not indicated differently
+by the client in the configuration file. Note that if the same IP
+address is used for multiple clients, this can still lead to an
+identifier collision and the IP-CONNECT request MUST be reject if such
+a collision is detect.
+
+Note: Are we allowing multiple client's to share the same 3-tuple when
+using Conn-ID? It might be good for privacy reasons however, it
+significantly increases the collision risk.
 
 ## Constructing the IP header in flow forwarding mode {#IP-header}
 
@@ -596,27 +635,43 @@ server should provide MTU information.
 The ECN field is by default set to non-ECN capable transport (non-ECT).
 Further ECN handling is described in Section {{ECN}}.
 
+## Decapsulating tunnel mode IP Packets {#tunnel-decapsulation}
+
+On receiving an HTTP Datagram containing any of the tunnel mode
+formats for IPv4 or IPv6 the proxy extracts the full IP packet.
+
+The proxy MUST verify that the extracted IP packet's source IP address
+matches any address associated with this CONNECTION-IP request,
+i.e. the assgined address or IP range. This is to prevent source
+address spoofing in tunnel mode.
+
+Further the proxy should verify that the IP header length field
+correspond to the extracted packets length. 
 
 ## Receiving an IP packet {#receiving}
 
-When the MASQUE proxy receives an incoming IP packet, it checks if the source
-and destination IP address as well as the IPv4 Protocol or IPv6 Next header field
-and maps to an active tunnel or flow forwarding association.
+When the MASQUE proxy receives an incoming IP packet on the external
+interface(s), it checks the packet selectors to find the mappings that
+match the given packet.
 
-If a client has a tunnel
-as well as multiple flow forwarding associations, the proxy need to check the mappings
-for the flow forwarding associations first, and only send it over the the tunnel association
-if no active flow forwarding is found.
+If a client has a tunnel as well as multiple flow forwarding
+associations, the proxy need to check the mappings for the flow
+forwarding associations first, and only send it over the the tunnel
+association if no active flow forwarding is found.
 
-If one or more
-mappings exists, it further checks if this mapping contains additional
-identifier information as provided by the Conn-ID Header of the CONNECT-IP
-request.  If this field maps as well, the IP payload is forwarded
-to the client. If no active mapping is found, the IP packet is discarded.
+If one or more mappings exists, it further checks if this mapping
+contains additional identifier information as provided by the Conn-ID
+Header of the CONNECT-IP request.  If this field maps as well, the IP
+payload is forwarded to the client. If no active mapping is found, the
+IP packet is discarded.
 
-If both datagram and stream
-based forwarding is supported, it is recommended for the proxy to use the same encapsulation as most recently used by the
-client or datagrams as default. Further considerations might be needed heree.
+The above is achieve by using the selector with the most number of
+fields that match the packet.
+
+If both datagram and stream based forwarding is supported, it is
+recommended for the proxy to use the same encapsulation as most
+recently used by the client or datagrams as default. Further
+considerations might be needed heree.
 
 # Additional signalling
 
