@@ -400,9 +400,9 @@ header. Used for Flow Forwarding mode.
 ### ICMP Message Format {#ICMP-message-format}
 
 This datagram contains a summary message of the ICMP message received
-and validated to relate to this IP flow. The message format carries
+and validated for the respective IP flow. The message format carries
 the ICMP packet for ICMPv4 {{RFC0792}} or ICMPv6 {{RFC4443}}. This
-format is chosen for forward compatibilty. From a implementation
+format is chosen for forward compatibilty. From an implementation
 perspective the client don't need to verify the checksum or validate
 the header fields becasue that is done by the server. However, some
 type codes, like IMCPv4 type 2, (Packet Too Big) carries an MTU field
