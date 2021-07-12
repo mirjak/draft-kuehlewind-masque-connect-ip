@@ -145,7 +145,7 @@ Table of Contents
    tunnel association, except a more specific flow forwarding
    association exists where both destination and source IP address as
    well as any additionally used identifier match (see section
-   Section 5.5.
+   Section 5.5).
 
    However, a proxy MUST offer this service only for known clients and
    clients MUST be authenticated during connection establishment.  The
