@@ -420,10 +420,10 @@ Table of Contents
    While IP packets sent over streams only have to respect the end-to-
    end MTU between the client and the target server, packets sent in
    datagrams are further restricted by the QUIC packet size of the QUIC
-   tunnel and any overhead within the QUIC tunnel packet.  The proxy
-   should provide MTU and overhead information to the client.  The
-   client MUST take this overhead into account when indicating the MTU
-   to the application.
+   tunnel and any overhead within the QUIC tunnel packet.  Ideally, the
+   proxy can provide MTU and overhead information to the client.  The
+   client MUST take the estimated overhead into account when indicating
+   the MTU to the application (see section Section 6.3).
 
 2.2.  Datagram Formats
 
@@ -797,7 +797,31 @@ Table of Contents
 
 6.3.  MTU considerations
 
-   TBD
+   The use of QUIC as a encapsulation between the client and proxy
+   introduces additional overhead.  If datagrams are used to encapsulate
+   packets between the proxy and client, the end-to-end packets must fit
+   within one datagram but the size of the datragrams is limited by the
+   tunneling encapsulation overhead.
+
+   In forwarding mode the client is usually also the tunnel endpoint
+   that knows about the tunnel overhead and can therefore restrict the
+   size of the packets on the end-to-end connection accordingly.
+   However, the target endpoint is usually not aware of the tunnel
+   overhead.  Additional signalling on the end-to-end connection from
+   the client to the target endpoint might be needed to restrict the
+   packet size.  If QUIC is also used as end-to-end protocol, this could
+   be realised by the transport parameter.  In additional, signal from
+   the proxy to the client could be provided as an extension to indicate
+   the tunnel overhand more accurately and flexibly over time.  Such
+   signalling might the realised on the HTTP layer in order to take any
+   additional limitations by HTTP intermediates into account.
+
+   If the proxy receives an incoming packet from a target endpoint that
+   is too big to fit within a datagram on the tunnel connection, the
+   proxy MAY either forward the packet encapsulated in the CAPSULE
+   frames on the respective stream or, if IPv4 with DF bit set or IPv6
+   is used, the proxy MAY reject the packet and send an ICMPv4 Packet
+   type 3 code 4, or ICMPv6 Too Big (PTB) message.
 
 7.  Examples
 
@@ -950,9 +974,9 @@ Informative References
               Westerlund, M., Ihlar, M., Sarker, Z., and M. Kuehlewind,
               "Transport Considerations for IP and UDP Proxying in
               MASQUE", Work in Progress, Internet-Draft, draft-
-              westerlund-masque-transport-issues-01, 12 January 2021,
+              westerlund-masque-transport-issues-02, 12 July 2021,
               <https://datatracker.ietf.org/doc/html/draft-westerlund-
-              masque-transport-issues-01>.
+              masque-transport-issues-02>.
 
    [RFC2474]  Nichols, K., Blake, S., Baker, F., and D. Black,
               "Definition of the Differentiated Services Field (DS
