@@ -1,0 +1,2302 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>The CONNECT-IP HTTP method for proxying IP traffic</title>
+<meta content="Mirja Kuehlewind" name="author">
+<meta content="Magnus Westerlund" name="author">
+<meta content="Marcus Ihlar" name="author">
+<meta content="Zaheduzzaman Sarker" name="author">
+<meta content="
+       This draft specifies a new HTTP method CONNECT-IP to proxy IP
+traffic. CONNECT-IP uses HTTP/3 Datagrams to use QUIC Datagrams for
+efficient transport of proxied IP packets, with the
+possibility to fallback to HTTP/3 over relibale QUIC streams, or even
+HTTP 1.x and 2. 
+       CONNECT-IP supports two modes: a tunneling mode where IP packets are
+forwarded without modifications and flow forwarding mode which
+supports optimization for individual IP flows forwarded to the targeted
+peer. To request tunneling or flow forwarding, a client connects to a proxy
+server by initiating a HTTP/3 connection and sends a CONNECT-IP
+request which either indicates the address of the proxy or the target
+peer. The proxy then forwards payload received on that stream or in
+an HTTP datagram with a certain stream ID. 
+    " name="description">
+<meta content="xml2rfc 3.9.1" name="generator">
+<meta content="draft-kuehlewind-masque-connect-ip-latest" name="ietf.draft">
+<!-- Generator version information:
+  xml2rfc 3.9.1
+    Python 3.9.5
+    appdirs 1.4.4
+    ConfigArgParse 1.3
+    google-i18n-address 2.5.0
+    html5lib 1.1
+    intervaltree 3.1.0
+    Jinja2 2.11.3
+    kitchen 1.2.6
+    lxml 4.6.3
+    pycountry 20.7.3
+    pyflakes 2.3.0
+    PyYAML 5.4.1
+    requests 2.25.1
+    setuptools 52.0.0
+    six 1.15.0
+-->
+<link href="draft-kuehlewind-masque-connect-ip.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html {
+  --background-color: #fff;
+  --text-color: #222;
+  --title-color: #191919;
+  --link-color: #2a6496;
+  --highlight-color: #f9f9f9;
+  --line-color: #eee;
+  --pilcrow-weak: #ddd;
+  --pilcrow-strong: #bbb;
+  --small-font-size: 14.5px;
+  scrollbar-color: #bbb #eee;
+}
+@media (prefers-color-scheme: dark) {
+html {
+  --background-color: #121212;
+  --text-color: #f0f0f0;
+  --title-color: #fff;
+  --link-color: #4da4f0;
+  --highlight-color: #282828;
+  --line-color: #444;
+  --pilcrow-weak: #444;
+  --pilcrow-strong: #666;
+  scrollbar-color: #777 #333;
+}
+}
+body {
+  max-width: 600px;
+  margin: 75px auto;
+  padding: 0 5px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  font: 16px/22px "Lora", serif;
+  scroll-behavior: smooth;
+}
+
+.ears {
+  display: none;
+}
+
+/* headings */
+#title, h1, h2, h3, h4, h5, h6 {
+  font-family: "Cabin Condensed", sans-serif;
+  font-weight: 600;
+  margin: 0.8em 0 0.3em;
+  font-size-adjust: 0.5;
+  color: var(--title-color);
+}
+#title {
+  font-size: 32px;
+  line-height: 40px;
+  clear: both;
+}
+#title, #rfcnum {
+  margin: 1.5em 0 0.2em;
+}
+#rfcnum + #title {
+  margin: 0.2em 0;
+}
+
+h1, h2, h3 {
+  font-size: 22px;
+  line-height: 27px;
+}
+h4, h5, h6 {
+  font-size: 20px;
+  line-height: 24px;
+}
+
+/* general structure */
+.author {
+  padding-bottom: 0.3em;
+}
+#abstract+p, #abstract+p code, #abstract+p samp, #abstract+p tt {
+  font-size: 18px;
+  line-height: 24px;
+}
+p {
+  padding: 0;
+  margin: 0.5em 0;
+  text-align: left;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+.alignCenter.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  border: none;
+  /* this isn't optimal, but it's an existence proof.  PrinceXML doesn't
+     support flexbox yet.
+  */
+  display: table;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 0.5em 2em;
+}
+ol ol, ul ul, ol ul, ul ol {
+  margin-left: 1em;
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+.ulCompact li {
+  margin: 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+}
+ul.empty li, .ulEmpty li {
+  margin-top: 0.5em;
+}
+ul.compact, .ulCompact,
+ol.compact, .olCompact {
+  line-height: 100%;
+  margin: 0 0 0 2em;
+}
+
+/* definition lists */
+dl {
+}
+dl > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl > dd {
+  margin-bottom: .8em;
+  min-height: 1.3em;
+}
+dl.compact > dd, .dlCompact > dd {
+  margin-bottom: 0em;
+}
+dl > dd > dl {
+  margin-top: 0.5em;
+  margin-bottom: 0em;
+}
+dd.break {
+  display: none;
+}
+
+/* links */
+a, a[href].selfRef:hover {
+  text-decoration: none;
+}
+a[href].selfRef {
+  color: var(--text-color);
+}
+a[href] {
+  color: var(--link-color);
+}
+a[href]:hover {
+  text-decoration: underline;
+}
+a[href].selfRef:hover {
+  background-color: var(--highlight-color);
+}
+a.xref {
+  white-space: nowrap;
+}
+
+/* Figures */
+tt, code, pre {
+  background-color: var(--highlight-color);
+  font: 14px/22px 'Oxygen Mono', monospace;
+}
+pre {
+  border: 1px solid var(--line-color);
+  font-size: 13.5px;
+  line-height: 16px;
+  letter-spacing: -0.2px;
+  margin: 5px;
+  padding: 5px;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0.5em 0;
+  padding: 0;
+}
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
+}
+figcaption, caption {
+  font-style: italic;
+  margin: 0.5em 1.5em;
+  text-align: left;
+}
+@media screen {
+  pre {
+    display: inline-block;
+    overflow-x: auto;
+    max-width: 100%;
+    width: calc(100% - 22px - 1em);
+  }
+  figure pre {
+    display: block;
+    width: calc(100% - 25px);
+  }
+  pre + .pilcrow {
+    display: inline-block;
+    vertical-align: text-bottom;
+    padding-bottom: 8px;
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 0 2em;
+  font-style: italic;
+}
+blockquote {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  margin: 1em 0;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+
+/* tables */
+table {
+  max-width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+}
+table.right {
+  margin-left: auto;
+}
+table.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+table.left {
+  margin-right: auto;
+}
+thead, tbody {
+  border: 1px solid var(--line-color);
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 5px 10px;
+}
+th {
+  background-color: var(--line-color);
+}
+tr:nth-child(2n) > td {
+  background-color: var(--background-color);
+}
+tr:nth-child(2n+1) > td {
+  background-color: var(--highlight-color);
+}
+thead+tbody > tr:nth-child(2n) > td {
+  background-color: var(--highlight-color);
+}
+thead+tbody > tr:nth-child(2n+1) > td {
+  background-color: var(--background-color);
+}
+table caption {
+  margin: 0;
+  padding: 3px 0 3px 1em;
+}
+table p {
+  margin: 0;
+}
+
+/* pilcrow */
+a.pilcrow {
+  margin-left: 3px;
+  opacity: 0.2;
+  user-select: none;
+}
+a.pilcrow[href] { color: var(--pilcrow-weak); }
+a.pilcrow[href]:hover { text-decoration: none; }
+@media not print {
+  :hover > a.pilcrow {
+    opacity: 1;
+  }
+  a.pilcrow[href]:hover {
+    color: var(--pilcrow-strong);
+    background-color: transparent;
+  }
+}
+@media print {
+  a.pilcrow {
+    display: none;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid var(--line-color);
+}
+.bcp14 {
+  font-variant: small-caps;
+}
+
+.role {
+  font-variant: all-small-caps;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: var(--small-font-size);
+  line-height: 18px;
+  --identifier-width: 8em;
+}
+#identifiers dt {
+  width: var(--identifier-width);
+  margin: 0;
+  clear: left;
+  float: left;
+  text-align: right;
+}
+#identifiers dd {
+  margin: 0 0 0 calc(1em + var(--identifier-width));
+  min-width: 5em;
+}
+#identifiers .authors .author {
+  display: inline-block;
+  margin-right: 1.5em;
+}
+#identifiers .authors .org {
+  font-style: italic;
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #999;
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: left;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+}
+#toc nav ul {
+  margin: 0 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+#toc nav li {
+  line-height: 1.3em;
+  margin: 0.75em 0;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+#toc a.xref {
+  white-space: normal;
+}
+/* references */
+.references dt {
+  text-align: right;
+  font-weight: bold;
+  min-width: 7em;
+}
+.references dd {
+  margin-left: 8em;
+  overflow: auto;
+}
+
+.refInstance {
+  margin-bottom: 1.25em;
+}
+
+.references .ascii {
+  margin-bottom: 0.25em;
+}
+
+/* index */
+.index ul {
+  margin: 0 0 0 1em;
+  padding: 0;
+  list-style: none;
+}
+.index ul ul {
+  margin: 0;
+}
+.index li {
+  margin: 0;
+  text-indent: -2em;
+  padding-left: 2em;
+  padding-bottom: 5px;
+}
+.indexIndex {
+  margin: 0.5em 0 1em;
+}
+.index a {
+  font-weight: 700;
+}
+/* make the index two-column on all but the smallest screens */
+@media (min-width: 500px) {
+  .index ul {
+    column-count: 2;
+    column-gap: 20px;
+  }
+  .index ul ul {
+    column-count: 1;
+    column-gap: 0;
+  }
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  margin: 1em 0;
+}
+address.vcard .nameRole {
+  font-weight: 700;
+  margin-left: 0;
+}
+address.vcard .label {
+  margin: 0.5em 0;
+}
+address.vcard .type {
+  display: none;
+}
+.alternative-contact {
+  margin: 1.5em 0 1em;
+}
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+@media (min-width: 500px) {
+  #authors-addresses > section {
+    column-count: 2;
+    column-gap: 20px;
+  }
+  #authors-addresses > section > h2 {
+    column-span: all;
+  }
+  /* hack for break-inside: avoid-column */
+  #authors-addresses address {
+    display: inline-block;
+    break-inside: avoid-column;
+  }
+}
+
+.rfcEditorRemove p:first-of-type {
+  font-style: italic;
+}
+.cref {
+  background-color: rgba(249, 232, 105, 0.3);
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+/* alternative layout for smaller screens */
+@media screen and (max-width: 929px) {
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 0;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+    opacity: 0.6;
+  }
+  #toc.active {
+      opacity: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 2px 0 2px 6px;
+    padding-right: 1em;
+    font-size: 18px;
+    line-height: 24px;
+    min-width: 190px;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #toc h2::before { /* css hamburger */
+    float: right;
+    position: relative;
+    width: 1em;
+    height: 1px;
+    left: -164px;
+    margin: 8px 0 0 0;
+    background: white none repeat scroll 0 0;
+    box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+    content: "";
+  }
+  #toc nav {
+    display: none;
+    background-color: var(--background-color);
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+  #toc.active nav {
+    display: block;
+  }
+  /* Make the collapsed ToC header render white on gray also when it's a link */
+  #toc h2 a,
+  #toc h2 a:link,
+  #toc h2 a:focus,
+  #toc h2 a:hover,
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+  #toc a.toplink {
+    margin-top: 2px;
+  }
+}
+
+/* alternative layout for wide screens */
+@media screen and (min-width: 930px) {
+  body {
+    padding-right: 360px;
+    padding-right: calc(min(180px + 20%, 500px));
+  }
+  #toc {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    right: calc(50vw - 480px);
+    width: 312px;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 2em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  #toc nav > ul  {
+    margin-bottom: 2em;
+  }
+  #toc ul {
+    margin: 0 0 0 4px;
+    font-size: var(--small-font-size);
+  }
+  #toc ul p, #toc ul li {
+    margin: 2px 0;
+    line-height: 22px;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre {
+    page-break-inside: avoid;
+  }
+  figure {
+    overflow: scroll;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  h2+*, h3+*, h4+*, h5+*, h6+* {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+}
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+}
+
+/* Changes introduced to fix issues found during implementation */
+
+/* Separate body from document info even without intervening H1 */
+section {
+  clear: both;
+}
+
+/* Top align author divs, to avoid names without organization dropping level with org names */
+.author {
+  vertical-align: top;
+}
+
+/* Style section numbers with more space between number and title */
+.section-number {
+  padding-right: 0.5em;
+}
+
+/* Add styling for a link in the ToC that points to the top of the document */
+a.toplink {
+  float: right;
+  margin: 8px 0.5em 0;
+}
+
+/* Fix the dl styling to match the RFC 7992 attributes */
+dl > dt,
+dl.dlParallel > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl.dlNewline > dt {
+  float: none;
+}
+
+/* Provide styling for table cell text alignment */
+table .text-left, table .text-left {
+  text-align: left;
+}
+table .text-center, table .text-center {
+  text-align: center;
+}
+table .text-right, table .text-right {
+  text-align: right;
+}
+
+/* Make the alternative author contact information look less like just another
+   author, and group it closer with the primary author contact information */
+.alternative-contact {
+  margin: 0.5em 0 0.25em 0;
+}
+address .non-ascii {
+  margin: 0 0 0 2em;
+}
+
+/* With it being possible to set tables with alignment
+  left, center, and right, { width: 100%; } does not make sense */
+table {
+  width: auto;
+}
+
+/* Avoid reference text that sits in a block with very wide left margin,
+   because of a long floating dt label.*/
+.references dd {
+  overflow: visible;
+}
+
+/* Control caption placement */
+caption {
+  caption-side: bottom;
+}
+
+/* Limit the width of the author address vcard, so names in right-to-left
+   script don't end up on the other side of the page. */
+
+address.vcard {
+  max-width: 20em;
+  margin-right: auto;
+}
+
+/* For address alignment dependent on LTR or RTL scripts */
+address div.left {
+  text-align: left;
+}
+address div.right {
+  text-align: right;
+}
+
+/* Give the table caption label the same styling as the figcaption */
+
+@media print {
+  .toplink {
+    display: none;
+  }
+
+  /* avoid overwriting the top border line with the ToC header */
+  #toc {
+    padding-top: 1px;
+  }
+
+  /* Avoid page breaks inside dl and author address entries */
+  dd {
+    page-break-before: avoid;
+  }
+  .vcard {
+    page-break-inside: avoid;
+  }
+
+}
+/* Tweak the bcp14 keyword presentation */
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+</style>
+
+</head>
+<body>
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">CONNECT-IP method</td>
+<td class="right">July 2021</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Kuehlewind, et al.</td>
+<td class="center">Expires 13 January 2022</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">MASQUE</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-kuehlewind-masque-connect-ip-latest</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2021-07-12" class="published">12 July 2021</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Standards Track</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2022-01-13">13 January 2022</time></dd>
+<dt class="label-authors">Authors:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">M. Kuehlewind</div>
+<div class="org">Ericsson</div>
+</div>
+<div class="author">
+      <div class="author-name">M. Westerlund</div>
+<div class="org">Ericsson</div>
+</div>
+<div class="author">
+      <div class="author-name">M. Ihlar</div>
+<div class="org">Ericsson</div>
+</div>
+<div class="author">
+      <div class="author-name">Z. Sarker</div>
+<div class="org">Ericsson</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">The CONNECT-IP HTTP method for proxying IP traffic</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">This draft specifies a new HTTP method CONNECT-IP to proxy IP
+traffic. CONNECT-IP uses HTTP/3 Datagrams to use QUIC Datagrams for
+efficient transport of proxied IP packets, with the
+possibility to fallback to HTTP/3 over relibale QUIC streams, or even
+HTTP 1.x and 2.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-2">CONNECT-IP supports two modes: a tunneling mode where IP packets are
+forwarded without modifications and flow forwarding mode which
+supports optimization for individual IP flows forwarded to the targeted
+peer. To request tunneling or flow forwarding, a client connects to a proxy
+server by initiating a HTTP/3 connection and sends a CONNECT-IP
+request which either indicates the address of the proxy or the target
+peer. The proxy then forwards payload received on that stream or in
+an HTTP datagram with a certain stream ID.<a href="#section-abstract-2" class="pilcrow">¶</a></p>
+</section>
+<section class="note rfcEditorRemove" id="section-note.1">
+      <h2 id="name-discussion-venues">
+<a href="#name-discussion-venues" class="section-name selfRef">Discussion Venues</a>
+      </h2>
+<p id="section-note.1-1">This note is to be removed before publishing as an RFC.<a href="#section-note.1-1" class="pilcrow">¶</a></p>
+<p id="section-note.1-2">Discussion of this document takes place on the
+  MASQUE Working Group mailing list (masque@ietf.org),
+  which is archived at <span><a href="https://mailarchive.ietf.org/arch/browse/masque/">https://mailarchive.ietf.org/arch/browse/masque/</a></span>.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
+<p id="section-note.1-3">Source for this draft and an issue tracker can be found at
+  <span><a href="https://github.com/mirjak/draft-kuehlewind-masque-connect-ip">https://github.com/mirjak/draft-kuehlewind-masque-connect-ip</a></span>.<a href="#section-note.1-3" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 13 January 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2021 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document. Code Components extracted from this
+            document must include Simplified BSD License text as described in
+            Section 4.e of the Trust Legal Provisions and are provided without
+            warranty as described in the Simplified BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1"><a href="#section-1" class="xref">1</a>.  <a href="#name-introduction" class="xref">Introduction</a></p>
+<ul class="toc ulBare compact ulEmpty">
+<li class="toc ulBare compact ulEmpty" id="section-toc.1-1.1.2.1">
+                <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="xref">1.1</a>.  <a href="#name-tunnel-mode" class="xref">Tunnel mode</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.1.2.2">
+                <p id="section-toc.1-1.1.2.2.1" class="keepWithNext"><a href="#section-1.2" class="xref">1.2</a>.  <a href="#name-flow-forwarding-mode" class="xref">Flow Forwarding mode</a></p>
+<ul class="toc ulBare compact ulEmpty">
+<li class="toc ulBare compact ulEmpty" id="section-toc.1-1.1.2.2.2.1">
+                    <p id="section-toc.1-1.1.2.2.2.1.1" class="keepWithNext"><a href="#section-1.2.1" class="xref">1.2.1</a>.  <a href="#name-motivation-of-ip-flow-model" class="xref">Motivation of IP flow model for flow forwarding</a></p>
+</li>
+                </ul>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.1.2.3">
+                <p id="section-toc.1-1.1.2.3.1"><a href="#section-1.3" class="xref">1.3</a>.  <a href="#name-definitions" class="xref">Definitions</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="xref">2</a>.  <a href="#name-the-connect-ip-method" class="xref">The CONNECT-IP method</a></p>
+<ul class="toc ulBare compact ulEmpty">
+<li class="toc ulBare compact ulEmpty" id="section-toc.1-1.2.2.1">
+                <p id="section-toc.1-1.2.2.1.1"><a href="#section-2.1" class="xref">2.1</a>.  <a href="#name-data-encapsualtion" class="xref">Data encapsualtion</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.2.2.2">
+                <p id="section-toc.1-1.2.2.2.1"><a href="#section-2.2" class="xref">2.2</a>.  <a href="#name-datagram-formats" class="xref">Datagram Formats</a></p>
+<ul class="toc ulBare compact ulEmpty">
+<li class="toc ulBare compact ulEmpty" id="section-toc.1-1.2.2.2.2.1">
+                    <p id="section-toc.1-1.2.2.2.2.1.1"><a href="#section-2.2.1" class="xref">2.2.1</a>.  <a href="#name-tunnel-mode-ipv4-format" class="xref">Tunnel Mode IPv4 Format</a></p>
+</li>
+                  <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.2.2.2.2.2">
+                    <p id="section-toc.1-1.2.2.2.2.2.1"><a href="#section-2.2.2" class="xref">2.2.2</a>.  <a href="#name-tunnel-mode-ipv6-format" class="xref">Tunnel Mode IPv6 Format</a></p>
+</li>
+                  <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.2.2.2.2.3">
+                    <p id="section-toc.1-1.2.2.2.2.3.1"><a href="#section-2.2.3" class="xref">2.2.3</a>.  <a href="#name-flow-forwarding-format" class="xref">Flow Forwarding Format</a></p>
+</li>
+                  <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.2.2.2.2.4">
+                    <p id="section-toc.1-1.2.2.2.2.4.1"><a href="#section-2.2.4" class="xref">2.2.4</a>.  <a href="#name-icmp-message-format" class="xref">ICMP Message Format</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="xref">3</a>.  <a href="#name-http-headers" class="xref">HTTP Headers</a></p>
+<ul class="toc ulBare compact ulEmpty">
+<li class="toc ulBare compact ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="xref">3.1</a>.  <a href="#name-ip-protocol-header-for-conn" class="xref">IP-Protocol Header for CONNECT-IP</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="xref">3.2</a>.  <a href="#name-ip-version-header-for-conne" class="xref">IP-Version header for CONNECT-IP</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.3.2.3">
+                <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="xref">3.3</a>.  <a href="#name-ip-address-header-for-conne" class="xref">IP-Address header for CONNECT-IP</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.3.2.4">
+                <p id="section-toc.1-1.3.2.4.1"><a href="#section-3.4" class="xref">3.4</a>.  <a href="#name-ip-address-handling-header-" class="xref">IP-Address-Handling Header for CONNECT-IP</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.3.2.5">
+                <p id="section-toc.1-1.3.2.5.1"><a href="#section-3.5" class="xref">3.5</a>.  <a href="#name-conn-id-header-for-connect-" class="xref">Conn-ID Header for CONNECT-IP</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="xref">4</a>.  <a href="#name-client-connect-ip-request" class="xref">Client Connect-IP Request</a></p>
+<ul class="toc ulBare compact ulEmpty">
+<li class="toc ulBare compact ulEmpty" id="section-toc.1-1.4.2.1">
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="xref">4.1</a>.  <a href="#name-requesting-flow-forwarding" class="xref">Requesting flow forwarding</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.4.2.2">
+                <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="xref">4.2</a>.  <a href="#name-requesting-tunnel-mode" class="xref">Requesting tunnel mode</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="xref">5</a>.  <a href="#name-masque-server-behavior" class="xref">MASQUE server behavior</a></p>
+<ul class="toc ulBare compact ulEmpty">
+<li class="toc ulBare compact ulEmpty" id="section-toc.1-1.5.2.1">
+                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="xref">5.1</a>.  <a href="#name-error-handling" class="xref">Error handling</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.5.2.2">
+                <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="xref">5.2</a>.  <a href="#name-ip-address-selection-in-flo" class="xref">IP address selection in flow forwarding mode</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.5.2.3">
+                <p id="section-toc.1-1.5.2.3.1"><a href="#section-5.3" class="xref">5.3</a>.  <a href="#name-constructing-the-ip-header-" class="xref">Constructing the IP header in flow forwarding mode</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.5.2.4">
+                <p id="section-toc.1-1.5.2.4.1"><a href="#section-5.4" class="xref">5.4</a>.  <a href="#name-decapsulating-tunnel-mode-i" class="xref">Decapsulating tunnel mode IP Packets</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.5.2.5">
+                <p id="section-toc.1-1.5.2.5.1"><a href="#section-5.5" class="xref">5.5</a>.  <a href="#name-receiving-an-ip-packet" class="xref">Receiving an IP packet</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="xref">6</a>.  <a href="#name-additional-signalling" class="xref">Additional signalling</a></p>
+<ul class="toc ulBare compact ulEmpty">
+<li class="toc ulBare compact ulEmpty" id="section-toc.1-1.6.2.1">
+                <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="xref">6.1</a>.  <a href="#name-ecn" class="xref">ECN</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.6.2.2">
+                <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="xref">6.2</a>.  <a href="#name-icmp-handling" class="xref">ICMP handling</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.6.2.3">
+                <p id="section-toc.1-1.6.2.3.1"><a href="#section-6.3" class="xref">6.3</a>.  <a href="#name-mtu-considerations" class="xref">MTU considerations</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="xref">7</a>.  <a href="#name-examples" class="xref">Examples</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="xref">8</a>.  <a href="#name-security-considerations" class="xref">Security considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-9" class="xref">9</a>.  <a href="#name-iana-considerations" class="xref">IANA considerations</a></p>
+<ul class="toc ulBare compact ulEmpty">
+<li class="toc ulBare compact ulEmpty" id="section-toc.1-1.9.2.1">
+                <p id="section-toc.1-1.9.2.1.1"><a href="#section-9.1" class="xref">9.1</a>.  <a href="#name-http-method" class="xref">HTTP Method</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.9.2.2">
+                <p id="section-toc.1-1.9.2.2.1"><a href="#section-9.2" class="xref">9.2</a>.  <a href="#name-http-header" class="xref">HTTP Header</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#section-10" class="xref"></a><a href="#name-acknowledgments" class="xref">Acknowledgments</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#section-11" class="xref"></a><a href="#name-references" class="xref">References</a></p>
+<ul class="toc ulBare compact ulEmpty">
+<li class="toc ulBare compact ulEmpty" id="section-toc.1-1.11.2.1">
+                <p id="section-toc.1-1.11.2.1.1"><a href="#section-11.1" class="xref"></a><a href="#name-normative-references" class="xref">Normative References</a></p>
+</li>
+              <li class="toc ulBare compact ulEmpty" id="section-toc.1-1.11.2.2">
+                <p id="section-toc.1-1.11.2.2.1"><a href="#section-11.2" class="xref"></a><a href="#name-informative-references" class="xref">Informative References</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12">
+            <p id="section-toc.1-1.12.1"><a href="#appendix-A" class="xref"></a><a href="#name-authors-addresses" class="xref">Authors' Addresses</a></p>
+</li>
+        </ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">This document specifies the CONNECT-IP method for IPv4 <span>[<a href="#RFC0791" class="xref">RFC0791</a>]</span> and
+IPv6 <span>[<a href="#RFC8200" class="xref">RFC8200</a>]</span> tunneling and flow forwarding over HTTP/3.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">CONNECT-IP supports two modes: a tunneling mode where IP packets are
+forwarded without modifications and flow forwarding mode which
+supports optimization for individual IP flows forwarded to the targeted
+peer.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<div id="tunnel-mode">
+<section id="section-1.1">
+        <h3 id="name-tunnel-mode">
+<a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-tunnel-mode" class="section-name selfRef">Tunnel mode</a>
+        </h3>
+<p id="section-1.1-1">In tunnel mode the client requests to tunnel IP packets to and from
+one or more servers via the proxy. The Connect-IP request to the proxy
+establishes such a tunnel and optionally indicates the IP address or IP
+address range that will be allowed to be used by and forwarded to the
+client.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
+<p id="section-1.1-2">The tunnel mode is indicated by the ":authority" pseudo-header field
+of the CONNECT-IP request contain the host and listing port of the
+proxy itself. In this mode the proxy just blindly forwards all payload
+on its external interface without any modification and also forwards
+all incoming traffic to registered clients as payload within the
+respective tunneling association. That means all incoming traffic, where
+the destination address matches an by the cliented indicated IP address
+or range of IP addresses, is forwarded to the client over the tunnel association,
+except a more specific flow fowarding assocaiation exists where both 
+destination and source IP address as well as any additionally used
+identifier match (see section <a href="#receiving" class="xref">Section 5.5</a>.<a href="#section-1.1-2" class="pilcrow">¶</a></p>
+<p id="section-1.1-3">However, a proxy MUST offer this
+service only for known clients and clients MUST be authenticated
+during connection establishment. The proxy SHOULD inspect the source
+IP address of the IP packet in the tunnel payload and only forward if
+the IP address matches a set of lent client IP
+address. Optionally, a proxy also MAY offer this service only for a
+limited set of target addresses. In such a case the proxy SHOULD also
+inspect the destination IP address of the tunnel payload as well as
+the sourcse addrress of incoming packets from target servers and
+reject packets with unknown addresses with an error.<a href="#section-1.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="flow-forwarding-mode">
+<section id="section-1.2">
+        <h3 id="name-flow-forwarding-mode">
+<a href="#section-1.2" class="section-number selfRef">1.2. </a><a href="#name-flow-forwarding-mode" class="section-name selfRef">Flow Forwarding mode</a>
+        </h3>
+<p id="section-1.2-1">In flow forwarding mode the CONNECT-IP method establishes an outgoing
+IP flow, from the MASQUE server's external address to the target
+server's address specified by the client for a particular upper layer
+protocol. This mode also enables reception and relaying of the reverse
+IP flow from the target address to the MASQUE server to ensure that
+return traffic can be received by the client.  However, it does not
+support flow establishment by an external peer.  This specification
+supports forwarding of incoming traffic to one of the clients only if
+an active mapping has previously been created based on an IP-CONNECT
+request. Clients that need to support reception of flows established
+by external peer need to use tunnel mode.<a href="#section-1.2-1" class="pilcrow">¶</a></p>
+<p id="section-1.2-2">This mode covers the point-to-point use case
+<span>[<a href="#I-D.ietf-masque-ip-proxy-reqs" class="xref">I-D.ietf-masque-ip-proxy-reqs</a>]</span> and allows for flow-based
+optimizations and a larger effective maximum packet size. The target
+IP address is provided by the client as part of the CONNECT-IP
+request. The sources address is either independently selected by the
+proxy or can be requested to be either the same as used in a previous
+and currently active CONNECT-IP request or different from currently
+requests by the same client. The client also indicates the upper layer
+protocol, thus defining the three tuple used as primary selector for
+the flow.<a href="#section-1.2-2" class="pilcrow">¶</a></p>
+<p id="section-1.2-3">In this mode the payload between the client and proxy does not contain
+the IP header in order to reduce overhead. Any additional information
+(other than the source and destination IP addresses and ports as well
+as the upper layer protocol identifier) that is needed to construct
+the IP header or to inform the client about information from received
+IP packets can be signalled as part of the CONNECT-IP request or using
+HTTP/3 Datagram <span>[<a href="#I-D.ietf-masque-h3-datagram" class="xref">I-D.ietf-masque-h3-datagram</a>]</span> later.<a href="#section-1.2-3" class="pilcrow">¶</a></p>
+<p id="section-1.2-4">In flow forwarding mode, usually one upper-layer end-to-end
+connection is associated to one CONNECT-IP forwarding
+association. While it would be possible for a client to use the same
+forwarding association for multiple end-to-end connections to the same
+target server, as long as they all require the same Protocol (IPv4) /
+Next Header (IPv6) value, this would lead to the use of the same flow
+ID for all connections. As such, this is not recommended for
+connection-oriented transmissions. In order to enable multiple flow
+forwarding associations to the same server, the flow forwarding mode
+supports a way to specify some additional upper layer protocol
+selectors, e.g. TCP source and destination port, to enable multiple
+CONNECT-IP request for the same three tuple, see CONN-ID header
+<a href="#Conn-Id" class="xref">Section 3.5</a>.<a href="#section-1.2-4" class="pilcrow">¶</a></p>
+<p id="section-1.2-5">The default model for address handling in this specification is that
+the proxy (Masque Server) will have a pool of one or more IP addresses
+that it can lend to the MASQUE client and routable over its external
+interface. Other potential use cases and address handling are
+possible, potentially requiring further extensions.<a href="#section-1.2-5" class="pilcrow">¶</a></p>
+<p id="section-1.2-6">This proposal is based on the analysis provided in
+<span>[<a href="#I-D.westerlund-masque-transport-issues" class="xref">I-D.westerlund-masque-transport-issues</a>]</span> indicating that most
+information in the IP header is either IP flow related or can or even
+should be provided by the proxy as the IP communication endpoint
+without the need for input from the client. The most crucial
+information identified that requires client interaction is ECN
+<span>[<a href="#RFC3168" class="xref">RFC3168</a>]</span> and ICMP <span>[<a href="#RFC0792" class="xref">RFC0792</a>]</span> <span>[<a href="#RFC4443" class="xref">RFC4443</a>]</span> handling.<a href="#section-1.2-6" class="pilcrow">¶</a></p>
+<p id="section-1.2-7">This document defines the following IP header field treatment.<a href="#section-1.2-7" class="pilcrow">¶</a></p>
+<p id="section-1.2-8">Required to be determined in Connect-IP request and response:<a href="#section-1.2-8" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-1.2-9.1">IP version<a href="#section-1.2-9.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-1.2-9.2">IP Source Address<a href="#section-1.2-9.2" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-1.2-9.3">IP Destination Address (target address)<a href="#section-1.2-9.3" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-1.2-9.4">Upper Layer Protocol (IPv4 Protocol field / IPv6 Next Header field)<a href="#section-1.2-9.4" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="section-1.2-10">Can be chosen by Proxy on transmission:<a href="#section-1.2-10" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-1.2-11.1">IPv6 Flow label (per Connect-IP flow mode request)<a href="#section-1.2-11.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-1.2-11.2">IPv4 Time to live / IPv6 Hop Limit (proxy configured)<a href="#section-1.2-11.2" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-1.2-11.3">Diffserv Codepoint, default is set to 0 (Best Effort)<a href="#section-1.2-11.3" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="section-1.2-12">May optionally be provided on a per packet basis<a href="#section-1.2-12" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-1.2-13.1">Explicit Congestion Notification in both directions.<a href="#section-1.2-13.1" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="section-1.2-14">The consequence of this is certain limitations that future extension
+can address. For packets that are sent from the target server to the client,
+the client will not get any information on the actual value of TTL/Hop Count,
+DSCP, or flow label when received by the proxy. Instead these field are
+set and consumed by the proxy only.<a href="#section-1.2-14" class="pilcrow">¶</a></p>
+<p id="section-1.2-15">Signalling of other dedicated values may be desired in certain
+deployments, e.g for DCSP <span>[<a href="#RFC2474" class="xref">RFC2474</a>]</span>.  However, DSCP is in any case a
+challenge due to local domain dependency of the used DSCP values and
+the forwarding behavior and traffic treatment they represent. Future
+use cases for DSCP, as well as new IPv6 extension headers or
+destination header options <span>[<a href="#RFC8200" class="xref">RFC8200</a>]</span> may require additional
+signaling. Therefore, it is important that the signaling is
+extensible.<a href="#section-1.2-15" class="pilcrow">¶</a></p>
+<div id="motivation-of-ip-flow-model-for-flow-forwarding">
+<section id="section-1.2.1">
+          <h4 id="name-motivation-of-ip-flow-model">
+<a href="#section-1.2.1" class="section-number selfRef">1.2.1. </a><a href="#name-motivation-of-ip-flow-model" class="section-name selfRef">Motivation of IP flow model for flow forwarding</a>
+          </h4>
+<p id="section-1.2.1-1">The chosen IP flow model is selected due to several advantages:<a href="#section-1.2.1-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-1.2.1-2.1">Minimized per packet overhead: The per packet overhead is reduced
+to basic framing of the IP payload for each IP packet and flow
+identifiers. This enables a larger effective Maximum Transmission
+Unit (MTU) than tunnel mode.<a href="#section-1.2.1-2.1" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-1.2.1-2.2">Shared functionality with CONNECT-UDP: The UDP flow proxying functionality
+of CONNECT-UDP will need to establish, store and process the same IP header
+related fields and state. So this can be accomplished by simply removing the
+UDP specific processing of packets.<a href="#section-1.2.1-2.2" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-1.2.1-2.3">CONNECT-IP can establish a new IP flow in 0-RTT: No network related
+latencies in establishing new flow.<a href="#section-1.2.1-2.3" class="pilcrow">¶</a>
+</li>
+          </ul>
+<p id="section-1.2.1-3">Disadvantages of this model are the following:<a href="#section-1.2.1-3" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-1.2.1-4.1">Client to server focused solution: Accepting non-solicited
+peer-initiated traffic is not supported.<a href="#section-1.2.1-4.1" class="pilcrow">¶</a>
+</li>
+          </ul>
+</section>
+</div>
+</section>
+</div>
+<div id="definitions">
+<section id="section-1.3">
+        <h3 id="name-definitions">
+<a href="#section-1.3" class="section-number selfRef">1.3. </a><a href="#name-definitions" class="section-name selfRef">Definitions</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="section-1.3-1.1">Proxy: This document uses proxy as synonym for the MASQUE Server
+or an HTTP proxy, depending on context.<a href="#section-1.3-1.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-1.3-1.2">Client: The endpoint initiating a MASQUE tunnel and IP relaying
+with the proxy.<a href="#section-1.3-1.2" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-1.3-1.3">Target host: A remote endpoint the client wishes to establish
+bi-directional communication with via tunnelling over the proxy.<a href="#section-1.3-1.3" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-1.3-1.4">IP proxying: A proxy forwarding IP payloads to a target for an IP
+flow. Data is decapsulate at the proxy and amended by a IP header
+before forwarding to the target. Packet boundaries need to be
+preserved or signalled between the client and proxy.<a href="#section-1.3-1.4" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-1.3-1.5">IP flow: A flow of IP packets between two hosts as identified by
+their IP addresses, and where all the packets share some
+properties. These properties include source/destination address,
+protocol / next header field, flow label (IPv6 only), and DSCP
+per direction.<a href="#section-1.3-1.5" class="pilcrow">¶</a>
+</li>
+        </ul>
+<span id="name-the-nodes-and-their-address"></span><div id="fig-node-model">
+<figure id="figure-1">
+          <div class="artwork art-text alignLeft" id="section-1.3-2.1">
+<pre>
+Address = IP address
+
+                     Target Address --+
+                                       \
++--------+           +--------+         \ +--------+
+|        |  Path #1  |        | Path #2  V|        |
+| Client |&lt;---------&gt;|  Proxy |&lt;---------&gt;| Target |
+|        |          ^|        |^          |        |
++--------+         / +--------+ \         +--------+
+                  /              \
+                 /                +-- Proxy's external address
+                /
+               +-- Proxy's service address
+</pre>
+</div>
+<figcaption><a href="#figure-1" class="selfRef">Figure 1</a>:
+<a href="#name-the-nodes-and-their-address" class="selfRef">The nodes and their addresses</a>
+          </figcaption></figure>
+</div>
+<p id="section-1.3-3"><a href="#fig-node-model" class="xref">Figure 1</a> provides an overview figure of the involved nodes,
+i.e. client, proxy, and target host. There are also two network paths.  Path #1
+is the client to proxy path, where IP proxying is provided over an HTTP/3
+session, usually over QUIC, to tunnel IP flow(s).  Path #2 is the path between
+the proxy and the target.<a href="#section-1.3-3" class="pilcrow">¶</a></p>
+<p id="section-1.3-4">The client will use the proxy's service address to establish a transport
+connection on which to request IP proxying using HTTP/3 CONNECT-IP.  The proxy
+will then relay the client's IP flows to the target host.  The IP header from
+the proxy to the target carries the proxy's external address as source address
+and the target's address as destination address.<a href="#section-1.3-4" class="pilcrow">¶</a></p>
+<p id="section-1.3-5">The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
+"SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this
+document are to be interpreted as described in BCP 14 <span>[<a href="#RFC2119" class="xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="xref">RFC8174</a>]</span>
+when, and only when, they appear in all capitals, as shown here.<a href="#section-1.3-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="connect-ip-method">
+<section id="section-2">
+      <h2 id="name-the-connect-ip-method">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-the-connect-ip-method" class="section-name selfRef">The CONNECT-IP method</a>
+      </h2>
+<p id="section-2-1">This document defines a new HTTP <span>[<a href="#I-D.ietf-httpbis-semantics" class="xref">I-D.ietf-httpbis-semantics</a>]</span>
+method CONNECT-IP to convert streams into tunnels or initialize HTTP
+datagram flows <span>[<a href="#I-D.ietf-masque-h3-datagram" class="xref">I-D.ietf-masque-h3-datagram</a>]</span> to a forwarding proxy.
+Each stream can be used separately to establish forwarding to
+potentially different remote hosts. Unlike the HTTP CONNECT method,
+CONNECT-IP does not request the proxy to establish a TCP connection to
+the remote target host. Instead the tunnel payload will be forwarded
+as individual IP packets (tunnel mode) or right on top of the IP layer
+(flow forwarding), meaning the proxy has to identify
+messages boundaries to each message before forwarding (see section
+<a href="#server" class="xref">Section 5</a>).<a href="#section-2-1" class="pilcrow">¶</a></p>
+<p id="section-2-2">This document specifies CONNECT-IP for HTTP following the same
+semantics as the CONNECT method. As such a CONNECT-IP request MUST be
+constructed as follows:<a href="#section-2-2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2-3.1">The ":method" pseudo-header field is set to "CONNECT-IP"<a href="#section-2-3.1" class="pilcrow">¶</a>
+</li>
+        <li class="normal" id="section-2-3.2">The ":scheme" and ":path" pseudo-header fields are omitted<a href="#section-2-3.2" class="pilcrow">¶</a>
+</li>
+        <li class="normal" id="section-2-3.3">The ":authority" pseudo-header field contains either the host
+ address to connect to (equivalent to the authority-form of the
+ request-target of CONNECT-UDP <span>[<a href="#I-D.ietf-masque-connect-udp" class="xref">I-D.ietf-masque-connect-udp</a>]</span> or
+ CONNECT requests; see Section 3.2.3 of
+ <span>[<a href="#I-D.ietf-httpbis-messaging" class="xref">I-D.ietf-httpbis-messaging</a>]</span>) or the host and port of the proxy
+ if tunnel mode is requested<a href="#section-2-3.3" class="pilcrow">¶</a>
+</li>
+      </ul>
+<p id="section-2-4">A CONNECT request that does not conform to these restrictions is malformed; see
+Section 4.1.3 of <span>[<a href="#I-D.ietf-quic-http" class="xref">I-D.ietf-quic-http</a>]</span>.<a href="#section-2-4" class="pilcrow">¶</a></p>
+<p id="section-2-5">Unlike the CONNECT method, CONNECT-IP does not sequentially trigger a
+connection establishment process from the proxy to the target
+host. Therefore, the client does not need to wait for an HTTP response
+in order to send forwarding data, unless in tunnel mode and requesting
+assignment of an external IP address. However, the client, especially
+on tunnel mode, SHOULD limit the amount of traffic sent to the proxy
+before a 2xx (Successful) response is received.<a href="#section-2-5" class="pilcrow">¶</a></p>
+<p id="section-2-6">The forwarding stays active as long as the respective stream is open.
+A Forwarded IP packet can be either an encapsulated HTTP datagram on
+the same HTTP stream as the CONNECT-IP request, or as a HTTP datagram
+sent over QUIC datagram.<a href="#section-2-6" class="pilcrow">¶</a></p>
+<div id="encap">
+<section id="section-2.1">
+        <h3 id="name-data-encapsualtion">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-data-encapsualtion" class="section-name selfRef">Data encapsualtion</a>
+        </h3>
+<p id="section-2.1-1">Once the CONNECT-IP method has completed, only CAPSUlE
+<span>[<a href="#I-D.ietf-masque-h3-datagram" class="xref">I-D.ietf-masque-h3-datagram</a>]</span> frames are permitted to be sent on
+that stream.  Extension frames MAY be used if specifically permitted
+by the definition of the extension.  Receipt of any other known frame
+type MUST be treated as a connection error of type
+H3_FRAME_UNEXPECTED.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.1-2">Each HTTP Datagram frame contains one of the below specified data
+formats (<a href="#datagram-formats" class="xref">Section 2.2</a>) depending on request forwarding mode and
+given headers and parameters.<a href="#section-2.1-2" class="pilcrow">¶</a></p>
+<p id="section-2.1-3">Stream based forwarding provides in-order and reliable delivery but
+may introduce Head of Line (HoL) Blocking if independent messages are
+send over the same CONNECT-IP association. On streams payload data is
+encapsulated in the CAPSULE Frame using the DATAGRAM capsule
+(type=0x02) <span>[<a href="#I-D.ietf-masque-h3-datagram" class="xref">I-D.ietf-masque-h3-datagram</a>]</span>.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
+<p id="section-2.1-4">The client can, in addition to stream-based forwarding, request
+use of HTTP/3 datagrams <span>[<a href="#I-D.ietf-masque-h3-datagram" class="xref">I-D.ietf-masque-h3-datagram</a>]</span>.<a href="#section-2.1-4" class="pilcrow">¶</a></p>
+<p id="section-2.1-5">To request datagram support the client sends H3_DATAGRAM SETTINGS
+parameter with a value of 1 <span>[<a href="#I-D.ietf-masque-h3-datagram" class="xref">I-D.ietf-masque-h3-datagram</a>]</span>.
+Datagram support MUST only be requested when
+the QUIC datagram extension <span>[<a href="#I-D.ietf-quic-datagram" class="xref">I-D.ietf-quic-datagram</a>]</span> was
+successfully negotiated during the QUIC handshake.<a href="#section-2.1-5" class="pilcrow">¶</a></p>
+<p id="section-2.1-6">Datagrams provide un-ordered and unreliable delivery. In theory both,
+stream- as well as datagram-based forwarding, can be used in parallel,
+however, for most transmissions it is expected to only use one.<a href="#section-2.1-6" class="pilcrow">¶</a></p>
+<p id="section-2.1-7">While IP packets sent over streams only have to respect the end-to-end
+MTU between the client and the target server, packets sent in
+datagrams are further restricted by the QUIC packet size of the QUIC
+tunnel and any overhead within the QUIC tunnel packet. Ideally, the proxy
+can provide MTU and overhead information to the client.  The client
+MUST take the estimated overhead into account when indicating the MTU
+to the application (see section <a href="#MTU" class="xref">Section 6.3</a>).<a href="#section-2.1-7" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="datagram-formats">
+<section id="section-2.2">
+        <h3 id="name-datagram-formats">
+<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-datagram-formats" class="section-name selfRef">Datagram Formats</a>
+        </h3>
+<p id="section-2.2-1">This section defines the different datagram formats used by
+Connect-IP. Even if only one format is currently used it is expected
+that for some usages future extension may require the flexibility to
+use multiple different formats for a given CONNECT-IP request.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
+<div id="tunnel-mode-ipv4-format">
+<section id="section-2.2.1">
+          <h4 id="name-tunnel-mode-ipv4-format">
+<a href="#section-2.2.1" class="section-number selfRef">2.2.1. </a><a href="#name-tunnel-mode-ipv4-format" class="section-name selfRef">Tunnel Mode IPv4 Format</a>
+          </h4>
+<p id="section-2.2.1-1">The Datagram contains one full IPv4 Packet per <span>[<a href="#RFC0791" class="xref">RFC0791</a>]</span>. Used in
+tunnel mode and when the IP Version is 4 per the IP-Version header or
+explicit given target address.<a href="#section-2.2.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="tunnel-mode-ipv6-format">
+<section id="section-2.2.2">
+          <h4 id="name-tunnel-mode-ipv6-format">
+<a href="#section-2.2.2" class="section-number selfRef">2.2.2. </a><a href="#name-tunnel-mode-ipv6-format" class="section-name selfRef">Tunnel Mode IPv6 Format</a>
+          </h4>
+<p id="section-2.2.2-1">The Datagram contains one full IPv6 Packet per <span>[<a href="#RFC8200" class="xref">RFC8200</a>]</span>. Used in
+tunnel mode and when the IP Version is 6 per the IP-Version header or
+explicit given target address.<a href="#section-2.2.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="flow-forwarding-format">
+<section id="section-2.2.3">
+          <h4 id="name-flow-forwarding-format">
+<a href="#section-2.2.3" class="section-number selfRef">2.2.3. </a><a href="#name-flow-forwarding-format" class="section-name selfRef">Flow Forwarding Format</a>
+          </h4>
+<p id="section-2.2.3-1">The Datagram contains only the IP payload. This is defined as the
+payload following the IPv4 header and any options for IPv4, and for
+IPv6 as the payload following the IPv6 header and any extension
+header. Used for Flow Forwarding mode.<a href="#section-2.2.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="ICMP-message-format">
+<section id="section-2.2.4">
+          <h4 id="name-icmp-message-format">
+<a href="#section-2.2.4" class="section-number selfRef">2.2.4. </a><a href="#name-icmp-message-format" class="section-name selfRef">ICMP Message Format</a>
+          </h4>
+<p id="section-2.2.4-1">This datagram contains a summary message of the ICMP message received
+and validated for the respective IP flow. The message format carries
+the ICMP packet for ICMPv4 <span>[<a href="#RFC0792" class="xref">RFC0792</a>]</span> or ICMPv6 <span>[<a href="#RFC4443" class="xref">RFC4443</a>]</span>. This
+format is chosen for forward compatibilty. From an implementation
+perspective the client don't need to verify the checksum or validate
+the header fields becasue that is done by the server. However, some
+type codes, like IMCPv4 type 2, (Packet Too Big) carries an MTU field
+that the implementation want to read beyond understanding the meaning
+of the type and code combination.<a href="#section-2.2.4-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="http-headers">
+<section id="section-3">
+      <h2 id="name-http-headers">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-http-headers" class="section-name selfRef">HTTP Headers</a>
+      </h2>
+<p id="section-3-1">Note: This section should be improved by clarifying if headers are in
+request, response or both.<a href="#section-3-1" class="pilcrow">¶</a></p>
+<div id="IP-Protocol">
+<section id="section-3.1">
+        <h3 id="name-ip-protocol-header-for-conn">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-ip-protocol-header-for-conn" class="section-name selfRef">IP-Protocol Header for CONNECT-IP</a>
+        </h3>
+<p id="section-3.1-1">In order to construct the IP header the the proxy needs to fill
+the "Protocol" field in the IPv4 header or "Next header" field in the
+IPv6 header. As the IP payload is otherwise mostly opaque to the
+proxy, this information has to be provided by the
+client for each CONNECT-IP request for flow forwarding.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.1-2">IP-Protocol is a Item Structured Header <span>[<a href="#RFC8941" class="xref">RFC8941</a>]</span>.  Its value MUST
+be an Integer. Its ABNF is:<a href="#section-3.1-2" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.1-3">
+<pre>
+  IP-Protocol = sf-integer
+</pre><a href="#section-3.1-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="ip-version-header-for-connect-ip">
+<section id="section-3.2">
+        <h3 id="name-ip-version-header-for-conne">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-ip-version-header-for-conne" class="section-name selfRef">IP-Version header for CONNECT-IP</a>
+        </h3>
+<p id="section-3.2-1">IP-Version is a Item Structured Header <span>[<a href="#RFC8941" class="xref">RFC8941</a>]</span>.  Its value MUST be
+an Integer and either 4 or 6. This information is used by the proxy to
+check if the requested IP version is supported by the network that the
+proxy is connected to, as well as to check the destination or source
+IP address for compliance.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.2-2">
+<pre>
+  IP-Version = sf-integer
+</pre><a href="#section-3.2-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="IP-Address">
+<section id="section-3.3">
+        <h3 id="name-ip-address-header-for-conne">
+<a href="#section-3.3" class="section-number selfRef">3.3. </a><a href="#name-ip-address-header-for-conne" class="section-name selfRef">IP-Address header for CONNECT-IP</a>
+        </h3>
+<p id="section-3.3-1">IP-Address is a Item Structured Header <span>[<a href="#RFC8941" class="xref">RFC8941</a>]</span>.  Its value MUST be
+an String contain an IP address or IP address range of the same IP
+version as indicated in the IP-Version header. The address must be
+specified in the format specified by TBD.<a href="#section-3.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.3-2">This header is used to request the use of a certain IP address or IP
+address range by the client to be used as source IP address in tunnel
+mode. If the IP-Address
+header is not presented, the proxy is implicitly requested to assign
+an IP address or IP address range and provide this information to the
+client with the HTTP response.<a href="#section-3.3-2" class="pilcrow">¶</a></p>
+<p id="section-3.3-3">If the the client does not provide an IP address or IP address range
+is has to wait for the proxy response before any payload data can be
+sent in tunnel mode. If the request is denied by the proxy, any sent
+payload data will be discarded and a new CONNECT-IP request has to be
+sent.<a href="#section-3.3-3" class="pilcrow">¶</a></p>
+<p id="section-3.3-4">The header is also used as a response header from the proxy to the
+client to indicate the actual IP address or IP address range that
+should be used by the client in tunnel mode or will be used by the
+proxy in flow forwadring mode.<a href="#section-3.3-4" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.3-5">
+<pre>
+  IP-Address = sf-string
+</pre><a href="#section-3.3-5" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="IP-Address-Handling">
+<section id="section-3.4">
+        <h3 id="name-ip-address-handling-header-">
+<a href="#section-3.4" class="section-number selfRef">3.4. </a><a href="#name-ip-address-handling-header-" class="section-name selfRef">IP-Address-Handling Header for CONNECT-IP</a>
+        </h3>
+<p id="section-3.4-1">This header can be used to request the use of a stable address for
+multiple active flow forwarding associations. The first association
+will be established with an IP selected by the proxy unless also the
+IP-Address header (<a href="#IP-Address" class="xref">Section 3.3</a>) is provided and accepted by
+proxy. However, additional forwarding association can be requested by
+the client to use the same IP address as a previous request by
+specifying the stream ID as value in this header. This header can also
+be used to ensure that a "new", not yet for this client used address
+is selected by setting a value that is larger than the maximum stream
+ID.<a href="#section-3.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.4-2">IP-Address-Handling is a Item Structured Header <span>[<a href="#RFC8941" class="xref">RFC8941</a>]</span>.  Its
+value MUST be an Integer and indicates the stream ID of the
+corresponding active flow forwarding association. Its ABNF is:<a href="#section-3.4-2" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.4-3">
+<pre>
+  IP-Address-Handling = sf-integer
+</pre><a href="#section-3.4-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="Conn-Id">
+<section id="section-3.5">
+        <h3 id="name-conn-id-header-for-connect-">
+<a href="#section-3.5" class="section-number selfRef">3.5. </a><a href="#name-conn-id-header-for-connect-" class="section-name selfRef">Conn-ID Header for CONNECT-IP</a>
+        </h3>
+<p id="section-3.5-1">This document further defines a new header field to be used with
+CONNECT-IP "Conn-ID". The Conn-ID HTTP header field indicates the
+value, offset, and length of a field in the IP payload that can be
+used by the proxy as a connection identifier in addition to the IP
+address and protocol tuple when multiple connections are proxied to
+the same target server for incoming traffic on the service address.<a href="#section-3.5-1" class="pilcrow">¶</a></p>
+<p id="section-3.5-2">Conn-ID is a Item Structured Header <span>[<a href="#RFC8941" class="xref">RFC8941</a>]</span>.  Its value MUST be a
+Byte Sequence. Its ABNF is:<a href="#section-3.5-2" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.5-3">
+<pre>
+  Conn-ID = sf-binary
+</pre><a href="#section-3.5-3" class="pilcrow">¶</a>
+</div>
+<p id="section-3.5-4">The following parameters are defined:<a href="#section-3.5-4" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.5-5.1">A parameter whose name is "offset", and whose value is an Integer
+indicating the offset of the identifier field starting from the
+beginning of a datagram or HTTP frame on the forwarding stream.<a href="#section-3.5-5.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="section-3.5-5.2">A parameter whose name is "length", and whose value is an Integer
+indicating the length of the identifier field starting from the
+offset.<a href="#section-3.5-5.2" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="section-3.5-6">Both parameters MUST be present and the header MUST be ignored if
+these parameter are not present.<a href="#section-3.5-6" class="pilcrow">¶</a></p>
+<p id="section-3.5-7">This function can be used to e.g. indicate the source port field in
+the IP payload when containing a TCP packet.<a href="#section-3.5-7" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="client-connect-ip-request">
+<section id="section-4">
+      <h2 id="name-client-connect-ip-request">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-client-connect-ip-request" class="section-name selfRef">Client Connect-IP Request</a>
+      </h2>
+<div id="client">
+<section id="section-4.1">
+        <h3 id="name-requesting-flow-forwarding">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-requesting-flow-forwarding" class="section-name selfRef">Requesting flow forwarding</a>
+        </h3>
+<p id="section-4.1-1">To request flow forwarding, the client sends a CONNECT-IP request to
+the forwarding proxy indicating the target host and port in the
+":authority" pseudo-header field. The host portion is either an IP
+literal encapsulated within square brackets, an IPv4 address in
+dotted-decimal form, or a registered name.  Further the CONNECT-IP
+request MUST contain the IP-Protocol header (<a href="#IP-Protocol" class="xref">Section 3.1</a>) and MAY
+contain the IP-Address-Handling (<a href="#IP-Address-Handling" class="xref">Section 3.4</a>) or the
+Conn-ID (<a href="#Conn-Id" class="xref">Section 3.5</a>) header.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="requesting-tunnel-mode">
+<section id="section-4.2">
+        <h3 id="name-requesting-tunnel-mode">
+<a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-requesting-tunnel-mode" class="section-name selfRef">Requesting tunnel mode</a>
+        </h3>
+<p id="section-4.2-1">In tunnel mode, the CONNECT-IP request MUST contain the IP-Version
+header to indicate if IPv4 or IPv6 is used for the IP packet in the
+tunnel payload.  Further, the request MAY contain an IP-Address
+header to request use of an IP address or IP address range.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="server">
+<section id="section-5">
+      <h2 id="name-masque-server-behavior">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-masque-server-behavior" class="section-name selfRef">MASQUE server behavior</a>
+      </h2>
+<p id="section-5-1">Upon the establishment of a HTTP Connection with the proxy on its
+service addresses. HTTP level capabilities will be exchanged in the
+HTTP SETTINGS frame. This will determine if support of datagrams is
+indicated. If indicated by the client, the MASQUE server SHALL send a
+H3_DATAGRAM SETTINGS parameter with a value of 1 to indicates is
+support.<a href="#section-5-1" class="pilcrow">¶</a></p>
+<p id="section-5-2">A MASQUE server that receives an IP-CONNECT request examines the
+target URL to determine if this request is for tunnel or flow
+forwarding mode. Based on the mode it determines if the required
+headers are present and which of the optional headers that are
+included.<a href="#section-5-2" class="pilcrow">¶</a></p>
+<p id="section-5-3">The proxy maintains a database with mappings between the HTTP
+connections and stream IDs and the IP level selectors and Conn-ID
+information. Using this database and the pool of available addresses
+and the requests IP-Address-Handling, Conn-ID, IP-Version, IP-Address
+headers (if included) to select a source IP address. This selection
+for flow forwarding mode is further discussed below in
+<a href="#flow-address-selection" class="xref">Section 5.2</a>. For Tunnel Mode, the proxy determine if
+the proposed IP address per IP-Version and IP-Address headers is
+possible to use if included, else selects a otherwise unused address
+from its pool. For tunnel mode the IP selector for incoming traffic
+for this HTTP Connection and Stream ID is simply the IP destination
+address.<a href="#section-5-3" class="pilcrow">¶</a></p>
+<p id="section-5-4">Once the mapping is successfully established, the proxy sends a
+HEADERS frame containing a 2xx series status code to the client.  The
+response MUST contain an IP-Address header indicating the outgoing
+source IP address or IP address range selected by the proxy.<a href="#section-5-4" class="pilcrow">¶</a></p>
+<p id="section-5-5">All Datagram capsules received on that stream as well as all HTTP/3
+datagrams belonging to this CONNECT-IP association are processed for
+forwarding to the target server. For flow forwarding mode the Datagram
+is processed as specified in <a href="#IP-header" class="xref">Section 5.3</a> to produce IP packets that
+can be forwarded. For tunnel-mode the complete IP packet are extracted
+from the Datagram and then forwarded as specified in
+<a href="#tunnel-decapsulation" class="xref">Section 5.4</a>.<a href="#section-5-5" class="pilcrow">¶</a></p>
+<p id="section-5-6">IP packets received from the target server are mapped to an active
+forwarding connection and are respectively forwarded in an CAPSULE
+DATAGRAM frame or HTTP/3 datagram to the client (see section
+<a href="#receiving" class="xref">Section 5.5</a> below).<a href="#section-5-6" class="pilcrow">¶</a></p>
+<div id="error-handling">
+<section id="section-5.1">
+        <h3 id="name-error-handling">
+<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-error-handling" class="section-name selfRef">Error handling</a>
+        </h3>
+<p id="section-5.1-1">TBD (e.g. out of IP address, conn-id collision)<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="flow-address-selection">
+<section id="section-5.2">
+        <h3 id="name-ip-address-selection-in-flo">
+<a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-ip-address-selection-in-flo" class="section-name selfRef">IP address selection in flow forwarding mode</a>
+        </h3>
+<p id="section-5.2-1">In flow forwarding mode the proxy constructs the IP header when
+sending the IP payload towards the target server and it selects an
+source IP address from its pool of IP addresses that are routed to the
+MASQUE server.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.2-2">If no additional information about a payload field that can be used as
+an identifier based on Conn-ID header is provided by the client, the
+proxy uses the source/destination address and protocol ID
+3-tuple in order to map an incoming IP packet to an active forwarding
+connection. The proxy MUST also consider if IP-Address-Handling header
+<a href="#IP-Address-Handling" class="xref">Section 3.4</a> is included and its value. If the
+IP-Address-Handling header is not included and the there has been
+prior request the proxy SHOULD give the client the same source Address
+as the first flow forwarding request.  Given these constraints the
+MASQUE proxy MUST select a source IP address that leads to a unique
+tuple, and if that is not possible an error response is generated. The
+same IP address MAY be used for different clients when those client
+connect to different target servers. However, this also means that
+potentially multiple IP address are used for the same client when
+multiple connection to one target server are needed. This can be
+problematic if the source address is used by the target as an
+identifier. Therefore it is RECOMMENDED that clients are given unique
+addresses unless a large fraction of the pool has been exhausted.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
+<p id="section-5.2-3">If the Conn-ID header is provided, the proxy should use that
+field as an connection identifier together with protocol ID, source
+and destination address, as a 4-tuple. In this case it is recommended
+to use a stable IP address for each client, while the same IP address
+might still be used for multiple clients, if not indicated differently
+by the client in the configuration file. Note that if the same IP
+address is used for multiple clients, this can still lead to an
+identifier collision and the IP-CONNECT request MUST be reject if such
+a collision is detect.<a href="#section-5.2-3" class="pilcrow">¶</a></p>
+<p id="section-5.2-4">Note: Are we allowing multiple client's to share the same 3-tuple when
+using Conn-ID? It might be good for privacy reasons however, it
+significantly increases the collision risk.<a href="#section-5.2-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="IP-header">
+<section id="section-5.3">
+        <h3 id="name-constructing-the-ip-header-">
+<a href="#section-5.3" class="section-number selfRef">5.3. </a><a href="#name-constructing-the-ip-header-" class="section-name selfRef">Constructing the IP header in flow forwarding mode</a>
+        </h3>
+<p id="section-5.3-1">To retrieve the source and destination address the proxy looks up the
+mapping for the datagram flow ID or stream identifier. The IP version, flow
+label, DiffServ codepoint (DSCP), and hop limit/TTL is selected by the proxy.
+The IPv4 Protocol or IPv6 Next Header field is set based on the information
+provided by the IP-Protocol header in the CONNECT-IP request.<a href="#section-5.3-1" class="pilcrow">¶</a></p>
+<p id="section-5.3-2">The proxy MUST set the Don't Fragment (DF) flag in the IPv4 header. Payload
+that does not fit into one IP packet MUST be dropped. A dropping
+indication should be provided to the client. Further the proxy should provide MTU information.<a href="#section-5.3-2" class="pilcrow">¶</a></p>
+<p id="section-5.3-3">The ECN field is by default set to non-ECN capable transport (non-ECT).
+Further ECN handling is described in Section <a href="#ECN" class="xref">Section 6.1</a>.<a href="#section-5.3-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="tunnel-decapsulation">
+<section id="section-5.4">
+        <h3 id="name-decapsulating-tunnel-mode-i">
+<a href="#section-5.4" class="section-number selfRef">5.4. </a><a href="#name-decapsulating-tunnel-mode-i" class="section-name selfRef">Decapsulating tunnel mode IP Packets</a>
+        </h3>
+<p id="section-5.4-1">On receiving an HTTP Datagram containing any of the tunnel mode
+formats for IPv4 or IPv6 the proxy extracts the full IP packet.<a href="#section-5.4-1" class="pilcrow">¶</a></p>
+<p id="section-5.4-2">The proxy MUST verify that the extracted IP packet's source IP address
+matches any address associated with this CONNECTION-IP request,
+i.e. the assigned address or IP range. This is to prevent source
+address spoofing in tunnel mode.<a href="#section-5.4-2" class="pilcrow">¶</a></p>
+<p id="section-5.4-3">Further the proxy should verify that the IP header length field
+correspond to the extracted packets length.<a href="#section-5.4-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="receiving">
+<section id="section-5.5">
+        <h3 id="name-receiving-an-ip-packet">
+<a href="#section-5.5" class="section-number selfRef">5.5. </a><a href="#name-receiving-an-ip-packet" class="section-name selfRef">Receiving an IP packet</a>
+        </h3>
+<p id="section-5.5-1">When the proxy receives an incoming IP packet on the external
+interface(s), it checks the packet selectors to find the mappings that
+match the given packet.<a href="#section-5.5-1" class="pilcrow">¶</a></p>
+<p id="section-5.5-2">If a client has a tunnel as well as multiple flow forwarding
+associations, the proxy need to check the mappings for the flow
+forwarding associations first, and only send it over the the tunnel
+association if no active flow forwarding is found.<a href="#section-5.5-2" class="pilcrow">¶</a></p>
+<p id="section-5.5-3">If one or more mappings exists, it further checks if this mapping
+contains additional identifier information as provided by the Conn-ID
+Header of the CONNECT-IP request.  If this field maps as well, the IP
+payload is forwarded to the client. If no active mapping is found, the
+IP packet is discarded.<a href="#section-5.5-3" class="pilcrow">¶</a></p>
+<p id="section-5.5-4">The above is achieve by using the selector with the most number of
+fields that match the packet.<a href="#section-5.5-4" class="pilcrow">¶</a></p>
+<p id="section-5.5-5">If both datagram and stream based forwarding is supported, it is
+recommended for the proxy to use the same encapsulation as most
+recently used by the client or datagrams as default. Further
+considerations might be needed here.<a href="#section-5.5-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="additional-signalling">
+<section id="section-6">
+      <h2 id="name-additional-signalling">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-additional-signalling" class="section-name selfRef">Additional signalling</a>
+      </h2>
+<p id="section-6-1">Context ID as defined by <span>[<a href="#I-D.ietf-masque-h3-datagram" class="xref">I-D.ietf-masque-h3-datagram</a>]</span> can be used to provide additional
+per association or per-payload signals. As <span>[<a href="#I-D.ietf-masque-h3-datagram" class="xref">I-D.ietf-masque-h3-datagram</a>]</span> is still work
+in progress, registration and use of Context IDs is left for future work at this point.<a href="#section-6-1" class="pilcrow">¶</a></p>
+<div id="ECN">
+<section id="section-6.1">
+        <h3 id="name-ecn">
+<a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-ecn" class="section-name selfRef">ECN</a>
+        </h3>
+<p id="section-6.1-1">ECN requires coordination with the end-to-end communication points as
+it should only be used if the endpoints are also capable and willing
+to signal congestion notifications to the other end and react
+accordingly if a congestion notification is received.<a href="#section-6.1-1" class="pilcrow">¶</a></p>
+<p id="section-6.1-2">The probing and verification in the upper layer protocol of end-to-end ECN requires per
+packet control over what value is set on IP packet transmission as
+well as which of all values are received by the proxy. The QUIC
+specification is providing one such example in Section 13.4 of
+<span>[<a href="#RFC9000" class="xref">RFC9000</a>]</span>. Thus in flow forwarding mode the proxy needs to be able
+to set and read the ECN values in sent and received IP packets
+respecitively. This may motivate that this functionality is optional
+to implement, even if supporting CONNECT-IP implementations in general
+will need to handle IP packets and their fields with fine grained
+control. If optional some negotiation mechanism is needed.<a href="#section-6.1-2" class="pilcrow">¶</a></p>
+<p id="section-6.1-3">Possible realizations are:<a href="#section-6.1-3" class="pilcrow">¶</a></p>
+<p id="section-6.1-4">a) always have two bits before payload in flow forwarding model,
+  e.g. by including the whole TOS byte, which would also enable DSCP
+  setting and reading.<a href="#section-6.1-4" class="pilcrow">¶</a></p>
+<p id="section-6.1-5">b) use 4 different context IDs depending on what ECN field value was
+  received or should be set.<a href="#section-6.1-5" class="pilcrow">¶</a></p>
+<p id="section-6.1-6">This is work in process and will be further specified in a future
+version of this document.<a href="#section-6.1-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="ICMP">
+<section id="section-6.2">
+        <h3 id="name-icmp-handling">
+<a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-icmp-handling" class="section-name selfRef">ICMP handling</a>
+        </h3>
+<p id="section-6.2-1">ICMP messages are directly forwarded in tunneling mode. In flow
+forwarding mode a ICMP datagram format (<a href="#ICMP-message-format" class="xref">Section 2.2.4</a>) is
+used to send the information from some ICMP message to the client.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+<p id="section-6.2-2">The proxy upon receiving an ICMP message with a destination of an IP
+address it performs flow forwarding on it needs to process the ICMP
+message. First it should validate that the ICMP message and find if it
+matches any of its IP flow selectors (including Conn-ID). In case
+there are multiple matching use the IP selector with the most number
+of field that matches fully.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
+<p id="section-6.2-3">Some messages may be applicable both to the proxy and the client. For
+example an verified ICMPv6 Packet Too Big is applicable both to the
+proxy and the client. Others like ICMPv6 Destiantion Unreachable
+(Type=1), Code=3 (Address unreachable) and Code=4 (Port unreachable)
+is only possible to act on by the client.<a href="#section-6.2-3" class="pilcrow">¶</a></p>
+<p id="section-6.2-4">QUESTION: Which ICMP messages should be suppressed by the proxy?<a href="#section-6.2-4" class="pilcrow">¶</a></p>
+<p id="section-6.2-5">If a matching IP selector was chosen, then lookup the mapping for the
+HTTP connection and Stream ID which this message should be sent
+to. Encapsulate the recevied ICMP message in the ICMP datagram format
+and send it to the client.<a href="#section-6.2-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="MTU">
+<section id="section-6.3">
+        <h3 id="name-mtu-considerations">
+<a href="#section-6.3" class="section-number selfRef">6.3. </a><a href="#name-mtu-considerations" class="section-name selfRef">MTU considerations</a>
+        </h3>
+<p id="section-6.3-1">The use of QUIC as a encapsulation between the client and proxy introduces
+additional overhead. If datagrams are used to encapsulate packets between
+the proxy and client, the end-to-end packets must fit within one datagram
+but the size of the datragrams is limited by the tunneling encapsulation
+overhead.<a href="#section-6.3-1" class="pilcrow">¶</a></p>
+<p id="section-6.3-2">In forwarding mode the client is usually also the tunnel endpoint that
+knows about the tunnel overhead and can therefore restrict the size of
+the packets on the end-to-end connection accordingly. However, the target
+server is usually not aware of the tunnel overhead. Additional signalling
+on the end-to-end connection from the client to the target server might
+be needed to restrict the packet size. If QUIC is also used as end-to-end
+protocol, this could be realised by the transport parameter. In additional,
+signal from the proxy to the client could be provided as an extension to
+indicate the tunnel overhand more accurately and flexibly over time. Such
+signalling might the realised on the HTTP layer in order to take any
+additional limitations by HTTP intermediates into account.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
+<p id="section-6.3-3">If the server receives an incoming packet from a target server that is
+too big to fit within a datagram on the tunnel connection, the server
+MAY eithher forwarding the packet encapsulated in the CAPSULE frames
+on the respective stream or, if IPv6 is used, it MAY reject the packet
+and send an ICMP Packet Too Big (PTB) message.<a href="#section-6.3-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="examples">
+<section id="section-7">
+      <h2 id="name-examples">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-examples" class="section-name selfRef">Examples</a>
+      </h2>
+<p id="section-7-1">TBD<a href="#section-7-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="security-considerations">
+<section id="section-8">
+      <h2 id="name-security-considerations">
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-security-considerations" class="section-name selfRef">Security considerations</a>
+      </h2>
+<p id="section-8-1">This document does currently not discuss risks that are generic to the MASQUE approach.<a href="#section-8-1" class="pilcrow">¶</a></p>
+<p id="section-8-2">Any CONNECT-IP specific risks need further consideration in future, especially
+when the handling of IP functions is defined in more detail.<a href="#section-8-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="iana">
+<section id="section-9">
+      <h2 id="name-iana-considerations">
+<a href="#section-9" class="section-number selfRef">9. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA considerations</a>
+      </h2>
+<div id="iana-method">
+<section id="section-9.1">
+        <h3 id="name-http-method">
+<a href="#section-9.1" class="section-number selfRef">9.1. </a><a href="#name-http-method" class="section-name selfRef">HTTP Method</a>
+        </h3>
+<p id="section-9.1-1">This document (if published as RFC) registers "CONNECT-IP" in the HTTP Method Registry
+maintained at &lt;<span><a href="https://www.iana.org/assignments/http-methods">https://www.iana.org/assignments/http-methods</a></span>&gt;.<a href="#section-9.1-1" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-9.1-2">
+<pre>
+  +--------------+------+------------+---------------+
+  | Method Name  | Safe | Idempotent |   Reference   |
+  +--------------+------+------------+---------------+
+  | CONNECT-IP   |  no  |     no     | This document |
+  +--------------+------+------------+---------------+
+</pre><a href="#section-9.1-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="iana-header">
+<section id="section-9.2">
+        <h3 id="name-http-header">
+<a href="#section-9.2" class="section-number selfRef">9.2. </a><a href="#name-http-header" class="section-name selfRef">HTTP Header</a>
+        </h3>
+<p id="section-9.2-1">This document (if published as RFC) registers the following header in the
+"Permanent Message Header Field Names" registry maintained at
+&lt;<span><a href="https://www.iana.org/assignments/message-headers">https://www.iana.org/assignments/message-headers</a></span>&gt;.<a href="#section-9.2-1" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-9.2-2">
+<pre>
+  +---------------------+----------+--------+---------------+
+  | Header Field Name   | Protocol | Status |   Reference   |
+  +---------------------+----------+--------+---------------+
+  | Conn-ID             |   http   |  exp   | This document |
+  +---------------------+----------+--------+---------------+
+  | IP-Protocol         |   http   |  exp   | This document |
+  +---------------------+----------+--------+---------------+
+  | IP-Address          |   http   |  exp   | This document |
+  +---------------------+----------+--------+---------------+
+  | IP-Address-Handling |   http   |  exp   | This document |
+  +---------------------+----------+--------+---------------+
+  | IP-Verison          |   http   |  exp   | This document |
+  +---------------------+----------+--------+---------------+
+</pre><a href="#section-9.2-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="acknowledgments">
+<section id="section-10">
+      <h2 id="name-acknowledgments">
+<a href="#name-acknowledgments" class="section-name selfRef">Acknowledgments</a>
+    </h2>
+</section>
+</div>
+<section id="section-11">
+      <h2 id="name-references">
+<a href="#name-references" class="section-name selfRef">References</a>
+      </h2>
+<section id="section-11.1">
+        <h3 id="name-normative-references">
+<a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+        </h3>
+<dl class="references">
+<dt id="I-D.ietf-httpbis-messaging">[I-D.ietf-httpbis-messaging]</dt>
+        <dd>
+<span class="refAuthor">Fielding, R. T.</span>, <span class="refAuthor">Nottingham, M.</span>, and <span class="refAuthor">J. Reschke</span>, <span class="refTitle">"HTTP/1.1"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-httpbis-messaging-16</span>, <time datetime="2021-05-27" class="refDate">27 May 2021</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-messaging-16">https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-messaging-16</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.ietf-httpbis-semantics">[I-D.ietf-httpbis-semantics]</dt>
+        <dd>
+<span class="refAuthor">Fielding, R. T.</span>, <span class="refAuthor">Nottingham, M.</span>, and <span class="refAuthor">J. Reschke</span>, <span class="refTitle">"HTTP Semantics"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-httpbis-semantics-16</span>, <time datetime="2021-05-27" class="refDate">27 May 2021</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-semantics-16">https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-semantics-16</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.ietf-masque-connect-udp">[I-D.ietf-masque-connect-udp]</dt>
+        <dd>
+<span class="refAuthor">Schinazi, D.</span>, <span class="refTitle">"The CONNECT-UDP HTTP Method"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-masque-connect-udp-03</span>, <time datetime="2021-01-05" class="refDate">5 January 2021</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-masque-connect-udp-03">https://datatracker.ietf.org/doc/html/draft-ietf-masque-connect-udp-03</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.ietf-masque-h3-datagram">[I-D.ietf-masque-h3-datagram]</dt>
+        <dd>
+<span class="refAuthor">Schinazi, D.</span> and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"Using QUIC Datagrams with HTTP/3"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-masque-h3-datagram-02</span>, <time datetime="2021-05-26" class="refDate">26 May 2021</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-masque-h3-datagram-02">https://datatracker.ietf.org/doc/html/draft-ietf-masque-h3-datagram-02</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.ietf-quic-datagram">[I-D.ietf-quic-datagram]</dt>
+        <dd>
+<span class="refAuthor">Pauly, T.</span>, <span class="refAuthor">Kinnear, E.</span>, and <span class="refAuthor">D. Schinazi</span>, <span class="refTitle">"An Unreliable Datagram Extension to QUIC"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-datagram-02</span>, <time datetime="2021-02-16" class="refDate">16 February 2021</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-datagram-02">https://datatracker.ietf.org/doc/html/draft-ietf-quic-datagram-02</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.ietf-quic-http">[I-D.ietf-quic-http]</dt>
+        <dd>
+<span class="refAuthor">Bishop, M.</span>, <span class="refTitle">"Hypertext Transfer Protocol Version 3 (HTTP/3)"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-http-34</span>, <time datetime="2021-02-02" class="refDate">2 February 2021</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-http-34">https://datatracker.ietf.org/doc/html/draft-ietf-quic-http-34</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC0791">[RFC0791]</dt>
+        <dd>
+<span class="refAuthor">Postel, J.</span>, <span class="refTitle">"Internet Protocol"</span>, <span class="seriesInfo">STD 5</span>, <span class="seriesInfo">RFC 791</span>, <span class="seriesInfo">DOI 10.17487/RFC0791</span>, <time datetime="1981-09" class="refDate">September 1981</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc791">https://datatracker.ietf.org/doc/html/rfc791</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC0792">[RFC0792]</dt>
+        <dd>
+<span class="refAuthor">Postel, J.</span>, <span class="refTitle">"Internet Control Message Protocol"</span>, <span class="seriesInfo">STD 5</span>, <span class="seriesInfo">RFC 792</span>, <span class="seriesInfo">DOI 10.17487/RFC0792</span>, <time datetime="1981-09" class="refDate">September 1981</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc792">https://datatracker.ietf.org/doc/html/rfc792</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC2119">[RFC2119]</dt>
+        <dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc2119">https://datatracker.ietf.org/doc/html/rfc2119</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC3168">[RFC3168]</dt>
+        <dd>
+<span class="refAuthor">Ramakrishnan, K.</span>, <span class="refAuthor">Floyd, S.</span>, and <span class="refAuthor">D. Black</span>, <span class="refTitle">"The Addition of Explicit Congestion Notification (ECN) to IP"</span>, <span class="seriesInfo">RFC 3168</span>, <span class="seriesInfo">DOI 10.17487/RFC3168</span>, <time datetime="2001-09" class="refDate">September 2001</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc3168">https://datatracker.ietf.org/doc/html/rfc3168</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC4443">[RFC4443]</dt>
+        <dd>
+<span class="refAuthor">Conta, A.</span>, <span class="refAuthor">Deering, S.</span>, and <span class="refAuthor">M. Gupta, Ed.</span>, <span class="refTitle">"Internet Control Message Protocol (ICMPv6) for the Internet Protocol Version 6 (IPv6) Specification"</span>, <span class="seriesInfo">STD 89</span>, <span class="seriesInfo">RFC 4443</span>, <span class="seriesInfo">DOI 10.17487/RFC4443</span>, <time datetime="2006-03" class="refDate">March 2006</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc4443">https://datatracker.ietf.org/doc/html/rfc4443</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8174">[RFC8174]</dt>
+        <dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc8174">https://datatracker.ietf.org/doc/html/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8200">[RFC8200]</dt>
+        <dd>
+<span class="refAuthor">Deering, S.</span> and <span class="refAuthor">R. Hinden</span>, <span class="refTitle">"Internet Protocol, Version 6 (IPv6) Specification"</span>, <span class="seriesInfo">STD 86</span>, <span class="seriesInfo">RFC 8200</span>, <span class="seriesInfo">DOI 10.17487/RFC8200</span>, <time datetime="2017-07" class="refDate">July 2017</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc8200">https://datatracker.ietf.org/doc/html/rfc8200</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8941">[RFC8941]</dt>
+        <dd>
+<span class="refAuthor">Nottingham, M.</span> and <span class="refAuthor">P-H. Kamp</span>, <span class="refTitle">"Structured Field Values for HTTP"</span>, <span class="seriesInfo">RFC 8941</span>, <span class="seriesInfo">DOI 10.17487/RFC8941</span>, <time datetime="2021-02" class="refDate">February 2021</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc8941">https://datatracker.ietf.org/doc/html/rfc8941</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9000">[RFC9000]</dt>
+      <dd>
+<span class="refAuthor">Iyengar, J., Ed.</span> and <span class="refAuthor">M. Thomson, Ed.</span>, <span class="refTitle">"QUIC: A UDP-Based Multiplexed and Secure Transport"</span>, <span class="seriesInfo">RFC 9000</span>, <span class="seriesInfo">DOI 10.17487/RFC9000</span>, <time datetime="2021-05" class="refDate">May 2021</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc9000">https://datatracker.ietf.org/doc/html/rfc9000</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+<section id="section-11.2">
+        <h3 id="name-informative-references">
+<a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+        </h3>
+<dl class="references">
+<dt id="I-D.ietf-masque-ip-proxy-reqs">[I-D.ietf-masque-ip-proxy-reqs]</dt>
+        <dd>
+<span class="refAuthor">Chernyakhovsky, A.</span>, <span class="refAuthor">McCall, D.</span>, and <span class="refAuthor">D. Schinazi</span>, <span class="refTitle">"Requirements for a MASQUE Protocol to Proxy IP Traffic"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-masque-ip-proxy-reqs-02</span>, <time datetime="2021-04-30" class="refDate">30 April 2021</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-masque-ip-proxy-reqs-02">https://datatracker.ietf.org/doc/html/draft-ietf-masque-ip-proxy-reqs-02</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.westerlund-masque-transport-issues">[I-D.westerlund-masque-transport-issues]</dt>
+        <dd>
+<span class="refAuthor">Westerlund, M.</span>, <span class="refAuthor">Ihlar, M.</span>, <span class="refAuthor">Sarker, Z.</span>, and <span class="refAuthor">M. Kuehlewind</span>, <span class="refTitle">"Transport Considerations for IP and UDP Proxying in MASQUE"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-westerlund-masque-transport-issues-01</span>, <time datetime="2021-01-12" class="refDate">12 January 2021</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-westerlund-masque-transport-issues-01">https://datatracker.ietf.org/doc/html/draft-westerlund-masque-transport-issues-01</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC2474">[RFC2474]</dt>
+      <dd>
+<span class="refAuthor">Nichols, K.</span>, <span class="refAuthor">Blake, S.</span>, <span class="refAuthor">Baker, F.</span>, and <span class="refAuthor">D. Black</span>, <span class="refTitle">"Definition of the Differentiated Services Field (DS Field) in the IPv4 and IPv6 Headers"</span>, <span class="seriesInfo">RFC 2474</span>, <span class="seriesInfo">DOI 10.17487/RFC2474</span>, <time datetime="1998-12" class="refDate">December 1998</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc2474">https://datatracker.ietf.org/doc/html/rfc2474</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</section>
+<div id="authors-addresses">
+<section id="appendix-A">
+      <h2 id="name-authors-addresses">
+<a href="#name-authors-addresses" class="section-name selfRef">Authors' Addresses</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Mirja Kuehlewind</span></div>
+<div dir="auto" class="left"><span class="org">Ericsson</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:mirja.kuehlewind@ericsson.com" class="email">mirja.kuehlewind@ericsson.com</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Magnus Westerlund</span></div>
+<div dir="auto" class="left"><span class="org">Ericsson</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:magnus.westerlund@ericsson.com" class="email">magnus.westerlund@ericsson.com</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Marcus Ihlar</span></div>
+<div dir="auto" class="left"><span class="org">Ericsson</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:marcus.ihlar@ericsson.com" class="email">marcus.ihlar@ericsson.com</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Zaheduzzaman Sarker</span></div>
+<div dir="auto" class="left"><span class="org">Ericsson</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:zaheduzzaman.sarker@ericsson.com" class="email">zaheduzzaman.sarker@ericsson.com</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+</body>
+</html>
