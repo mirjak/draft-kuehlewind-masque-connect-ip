@@ -135,7 +135,7 @@ request. Clients that need to support reception of flows established
 by external peer need to use tunnel mode.
 
 This mode covers the point-to-point use case
-{{I-D.ietf-masque-ip-proxy-reqs}} and allows for flow-based
+{{?I-D.ietf-masque-ip-proxy-reqs}} and allows for flow-based
 optimizations and a larger effective maximum packet size. The target
 IP address is provided by the client as part of the CONNECT-IP
 request. The sources address is either independently selected by the
