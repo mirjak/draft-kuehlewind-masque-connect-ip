@@ -726,16 +726,17 @@ Table of Contents
    to signal congestion notifications to the other end and react
    accordingly if a congestion notification is received.
 
-   The probing and verification in the ULP of end-to-end ECN requires
-   per packet control over what value is set on IP packet transmission
-   as well as which of all values are received by the proxy.  The QUIC
-   specification is providing one such example in Section 13.4 of
-   [RFC9000].  Thus in flow forwarding mode the proxy needs to be able
-   to set and read the ECN values in sent and received IP packets
-   respecitively.  This may motivate that this functionality is optional
-   to implement, even if supporting CONNECT-IP implementations in
-   general will need to handle IP packets and their fields with fine
-   grained control.  If optional some negotiation mechanism is needed.
+   The probing and verification in the upper layer protocol of end-to-
+   end ECN requires per packet control over what value is set on IP
+   packet transmission as well as which of all values are received by
+   the proxy.  The QUIC specification is providing one such example in
+   Section 13.4 of [RFC9000].  Thus in flow forwarding mode the proxy
+   needs to be able to set and read the ECN values in sent and received
+   IP packets respecitively.  This may motivate that this functionality
+   is optional to implement, even if supporting CONNECT-IP
+   implementations in general will need to handle IP packets and their
+   fields with fine grained control.  If optional some negotiation
+   mechanism is needed.
 
    Possible realizations are:
 
