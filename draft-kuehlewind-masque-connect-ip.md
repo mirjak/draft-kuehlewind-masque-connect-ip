@@ -743,7 +743,7 @@ proxy and the client. Others like ICMPv6 Destiantion Unreachable
 (Type=1), Code=3 (Address unreachable) and Code=4 (Port unreachable)
 is only possible to act on by the client.
 
-QUESTION: Any ICMP messages that should be suppressed by the proxy?
+QUESTION: Which ICMP messages should be suppressed by the proxy?
 
 If a matching IP selector was chosen, then lookup the mapping for the
 HTTP connection and Stream ID which this message should be sent
