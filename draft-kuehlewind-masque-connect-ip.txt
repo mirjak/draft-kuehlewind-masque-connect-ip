@@ -5,9 +5,9 @@
 MASQUE                                                     M. Kuehlewind
 Internet-Draft                                             M. Westerlund
 Intended status: Standards Track                                M. Ihlar
-Expires: 9 January 2022                                        Z. Sarker
+Expires: 13 January 2022                                       Z. Sarker
                                                                 Ericsson
-                                                             8 July 2021
+                                                            12 July 2021
 
 
            The CONNECT-IP HTTP method for proxying IP traffic
@@ -17,18 +17,18 @@ Abstract
 
    This draft specifies a new HTTP method CONNECT-IP to proxy IP
    traffic.  CONNECT-IP uses HTTP/3 Datagrams to use QUIC Datagrams for
-   efficient transport of tunneled or proxied IP packets, with the
-   possibility to fallback to HTTP/3 over relibale QUIC streams, or even
-   HTTP 1.x and 2.
+   efficient transport of proxied IP packets, with the possibility to
+   fallback to HTTP/3 over relibale QUIC streams, or even HTTP 1.x and
+   2.
 
    CONNECT-IP supports two modes: a tunneling mode where IP packets are
    forwarded without modifications and flow forwarding mode which
-   supports optimiation for individual IP flows forwarded to the
-   targeted peer.  To request tunneling or forwarding, a client connects
-   to a proxy server by initiating a HTTP/3 connection and sends a
-   CONNECT-IP request which either indicates the address of the proxy or
-   the target peer.  The proxy then forwards payload received on that
-   stream or in an HTTP datagram with a certain stream ID.
+   supports optimization for individual IP flows forwarded to the
+   targeted peer.  To request tunneling or flow forwarding, a client
+   connects to a proxy server by initiating a HTTP/3 connection and
+   sends a CONNECT-IP request which either indicates the address of the
+   proxy or the target peer.  The proxy then forwards payload received
+   on that stream or in an HTTP datagram with a certain stream ID.
 
 Discussion Venues
 
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 9 January 2022.
+   This Internet-Draft will expire on 13 January 2022.
 
 Copyright Notice
 
@@ -85,6 +85,7 @@ Table of Contents
        2.2.1.  Tunnel Mode IPv4 Format
        2.2.2.  Tunnel Mode IPv6 Format
        2.2.3.  Flow Forwarding Format
+       2.2.4.  ICMP Message Format
    3.  HTTP Headers
      3.1.  IP-Protocol Header for CONNECT-IP
      3.2.  IP-Version header for CONNECT-IP
@@ -118,36 +119,44 @@ Table of Contents
 1.  Introduction
 
    This document specifies the CONNECT-IP method for IPv4 [RFC0791] and
-   IPv6 [RFC8200] tunneling and flow forwarding over HTTP/3, according
-   to the MASQUE proposal.
+   IPv6 [RFC8200] tunneling and flow forwarding over HTTP/3.
 
-   The default model for address handling in this specification is that
-   the proxy (Masque Server) will have a pool of one or more IP
-   addresses that it can lend to the MASQUE client routable over its
-   external interface.  Other potential use cases and address handling
-   are possible, potentially requiring further extensions.
+   CONNECT-IP supports two modes: a tunneling mode where IP packets are
+   forwarded without modifications and flow forwarding mode which
+   supports optimization for individual IP flows forwarded to the
+   targeted peer.
 
 1.1.  Tunnel mode
 
-   In tunnel mode the client requests tunnel IP packets to and from the
-   proxy.  The Connect-IP request establishes such a tunnel and
-   optionally indicates the IP address or IP range that will be allowed
-   to be forwarded.
+   In the tunnel mode the client requests to tunnel the IP packets to
+   and from to one or more servers via the proxy.  The Connect-IP
+   request to the proxy establishes such a tunnel and optionally
+   indicates the IP address or IP address range that will be allowed to
+   be forwarded to the client.
 
    The tunnel mode is indicated by the ":authority" pseudo-header field
    of the CONNECT-IP request contain the host and listing port of the
    proxy itself.  In this mode the proxy just blindly forwards all
    payload on its external interface without any modification and also
    forwards all incoming traffic to registered clients as payload within
-   the respective tunneling association.  However, a proxy MUST offer
-   this service only for known clients and clients MUST be
-   authentificated during connection establishment.  The proxy SHOULLD
-   inspect the source IP address of the IP packet in the tunnel payload
-   and only forward if the IP address matches a set of registered client
-   IP address.  Optionally, a proxy also MAY offer this service only for
-   a limited set of target addresses.  In such a case the proxy SHOULD
-   also inspect the destination IP address and reject packets with
-   unknown destination address with an error message.
+   the respective tunneling association.  That means all incoming
+   traffic, where the destination address matches an by the cliented
+   indicated IP address or range of IP addresses, is forwarded to the
+   client over the tunnel association, except a more specific flow
+   fowarding assocaiation exists where both destination and source IP
+   address as well as any additionally used identifier match (see
+   section Section 5.5.
+
+   However, a proxy MUST offer this service only for known clients and
+   clients MUST be authenticated during connection establishment.  The
+   proxy SHOULD inspect the source IP address of the IP packet in the
+   tunnel payload and only forward if the IP address matches a set of
+   lent client IP address.  Optionally, a proxy also MAY offer this
+   service only for a limited set of target addresses.  In such a case
+   the proxy SHOULD also inspect the destination IP address of the
+   tunnel payload as well as the sourcse addrress of incoming packets
+   from target servers and reject packets with unknown addresses with an
+   error.
 
 1.2.  Flow Forwarding mode
 
@@ -163,10 +172,11 @@ Table of Contents
    on an IP-CONNECT request.  Clients that need to support reception of
    flows established by external peer need to use tunnel mode.
 
-   This mode covers the point-to-point use case and allows for flow-
-   based optimizations and a larger effective maximum packet size.  The
-   target IP address is provided by the client as part of the CONNECT-IP
-   request.  The sources address is eiter independently selected by the
+   This mode covers the point-to-point use case
+   [I-D.ietf-masque-ip-proxy-reqs] and allows for flow-based
+   optimizations and a larger effective maximum packet size.  The target
+   IP address is provided by the client as part of the CONNECT-IP
+   request.  The sources address is either independently selected by the
    proxy or can be requested to be either the same as used in a previous
    and currently active CONNECT-IP request or different from currently
    requests by the same client.  The client also indicates the upper
@@ -179,20 +189,27 @@ Table of Contents
    ports as well as the upper layer protocol identifier) that is needed
    to construct the IP header or to inform the client about information
    from received IP packets can be signalled as part of the CONNECT-IP
-   requst or using HTTP/3 Datagram [I-D.ietf-masque-h3-datagram] later.
+   request or using HTTP/3 Datagram [I-D.ietf-masque-h3-datagram] later.
 
-   As such, in flow forwarding mode usually one upper-layer end-to-end
+   In flow forwarding mode, usually one upper-layer end-to-end
    connection is associated to one CONNECT-IP forwarding association.
-   While it would be possible for a client to use the same forwadring
+   While it would be possible for a client to use the same forwarding
    association for multiple end-to-end connections to the same target
    server, as long as they all require the same Protocol (IPv4) / Next
    Header (IPv6) value, this would lead to the use of the same flow ID
-   for all connections.  As such this is not recommended for connection-
-   oriented transmissions.  In order to enable multiple flow forwadring
-   asssociation to the same server, the flow forwading mode supports a
-   way to specify some additional upper layer protocol selectors, e.g.
-   TCP source and destination port, to enable multiple CONNECT-IP
-   request for the same three tuple, see CONN-ID header Section 3.5.
+   for all connections.  As such, this is not recommended for
+   connection-oriented transmissions.  In order to enable multiple flow
+   forwarding associations to the same server, the flow forwarding mode
+   supports a way to specify some additional upper layer protocol
+   selectors, e.g.  TCP source and destination port, to enable multiple
+   CONNECT-IP request for the same three tuple, see CONN-ID header
+   Section 3.5.
+
+   The default model for address handling in this specification is that
+   the proxy (Masque Server) will have a pool of one or more IP
+   addresses that it can lend to the MASQUE client and routable over its
+   external interface.  Other potential use cases and address handling
+   are possible, potentially requiring further extensions.
 
    This proposal is based on the analysis provided in
    [I-D.westerlund-masque-transport-issues] indicating that most
@@ -221,7 +238,7 @@ Table of Contents
 
    *  IPv4 Time to live / IPv6 Hop Limit (proxy configured)
 
-   *  Diffserv Codepoint per default set to 0 (Best Effort)
+   *  Diffserv Codepoint, default is set to 0 (Best Effort)
 
    May optionally be provided on a per packet basis
 
@@ -229,7 +246,7 @@ Table of Contents
 
    The consequence of this is certain limitations that future extension
    can address.  For packets that are sent from the target server to the
-   client, the clieent will not get any information on the actual value
+   client, the client will not get any information on the actual value
    of TTL/Hop Count, DSCP, or flow label when received by the proxy.
    Instead these field are set and consumed by the proxy only.
 
@@ -325,7 +342,7 @@ Table of Contents
 2.  The CONNECT-IP method
 
    This document defines a new HTTP [I-D.ietf-httpbis-semantics] method
-   CONNECT-IP to convert streams into tunnels or initialise HTTP
+   CONNECT-IP to convert streams into tunnels or initialize HTTP
    datagram flows [I-D.ietf-masque-h3-datagram] to a forwarding proxy.
    Each stream can be used separately to establish forwarding to
    potentially different remote hosts.  Unlike the HTTP CONNECT method,
@@ -354,7 +371,7 @@ Table of Contents
    A CONNECT request that does not conform to these restrictions is
    malformed; see Section 4.1.3 of [I-D.ietf-quic-http].
 
-   Different to the TCP-based CONNECT, CONNECT-IP does not trigger a
+   Unlike the CONNECT method, CONNECT-IP does not sequentially trigger a
    connection establishment process from the proxy to the target host.
    Therefore, the client does not need to wait for an HTTP response in
    order to send forwarding data, unless in tunnel mode and requesting
@@ -369,7 +386,7 @@ Table of Contents
 
 2.1.  Data encapsualtion
 
-   Once the CONNECT-IP method has completed, only CAPSULATE
+   Once the CONNECT-IP method has completed, only CAPSUlE
    [I-D.ietf-masque-h3-datagram] frames are permitted to be sent on that
    stream.  Extension frames MAY be used if specifically permitted by
    the definition of the extension.  Receipt of any other known frame
@@ -378,12 +395,12 @@ Table of Contents
 
    Each HTTP Datagram frame contains one of the below specified data
    formats (Section 2.2) depending on request forwarding mode and given
-   headers and paramters.
+   headers and parameters.
 
-   Stream based forwadring provides in-order and reliable delivery but
+   Stream based forwarding provides in-order and reliable delivery but
    may introduce Head of Line (HoL) Blocking if independent messages are
    send over the same CONNECT-IP association.  On streams payload data
-   is encapsulated in the CAPSULATE Frame using the DATAGRAM capsule
+   is encapsulated in the CAPSULE Frame using the DATAGRAM capsule
    (type=0x02) [I-D.ietf-masque-h3-datagram].
 
    The client can, in addition to stream-based forwarding, request use
@@ -391,7 +408,7 @@ Table of Contents
 
    To request datagram support the client sends H3_DATAGRAM SETTINGS
    parameter with a value of 1 [I-D.ietf-masque-h3-datagram].  Datagram
-   suppot MUST only be requested when the QUIC datagram extension
+   support MUST only be requested when the QUIC datagram extension
    [I-D.ietf-quic-datagram] was successfully negotiated during the QUIC
    handshake.
 
@@ -410,7 +427,7 @@ Table of Contents
 
 2.2.  Datagram Formats
 
-   This section defined the different datagram formats used by Connect-
+   This section defines the different datagram formats used by Connect-
    IP.  Even if only one format is currently used it is expected that
    for some usages future extension may require the flexibility to use
    multiple different formats for a given CONNECT-IP request.
@@ -434,18 +451,30 @@ Table of Contents
    IPv6 as the payload following the IPv6 header and any extension
    header.  Used for Flow Forwarding mode.
 
+2.2.4.  ICMP Message Format
+
+   This datagram contains a summary message of the ICMP message received
+   and validated for the respective IP flow.  The message format carries
+   the ICMP packet for ICMPv4 [RFC0792] or ICMPv6 [RFC4443].  This
+   format is chosen for forward compatibilty.  From an implementation
+   perspective the client don't need to verify the checksum or validate
+   the header fields becasue that is done by the server.  However, some
+   type codes, like IMCPv4 type 2, (Packet Too Big) carries an MTU field
+   that the implementation want to read beyond understanding the meaning
+   of the type and code combination.
+
 3.  HTTP Headers
 
-   Note: This section should be improved by clarifying if headers are
+   Note: This section should be improved by clarifying if headers are in
    request, response or both.
 
 3.1.  IP-Protocol Header for CONNECT-IP
 
-   In order to construct the IP header the MASQUE server needs to fill
-   the "Protocol" field in the IPv4 header or "Next header" field in the
+   In order to construct the IP header the the proxy needs to fill the
+   "Protocol" field in the IPv4 header or "Next header" field in the
    IPv6 header.  As the IP payload is otherwise mostly opaque to the
-   MASQUE forwarding server, this information has to be provided by the
-   client for each CONNECT-IP request for flow forwarding.
+   proxy, this information has to be provided by the client for each
+   CONNECT-IP request for flow forwarding.
 
    IP-Protocol is a Item Structured Header [RFC8941].  Its value MUST be
    an Integer.  Its ABNF is:
@@ -465,23 +494,26 @@ Table of Contents
 3.3.  IP-Address header for CONNECT-IP
 
    IP-Address is a Item Structured Header [RFC8941].  Its value MUST be
-   an String contain an IP address or IP range of the same IP version as
-   indicated in the IP-Version header.  The address must be specified in
-   the format spectified by TBD.
+   an String contain an IP address or IP address range of the same IP
+   version as indicated in the IP-Version header.  The address must be
+   specified in the format specified by TBD.
 
    This header is used to request the use of a certain IP address or IP
-   address range.  If the IP-Address header is not presented, the proxy
-   is implicitly requested to assign an IP address or IP address range
-   and provide this information to the client with the HTTP response.
+   address range by the client to be used as source IP address in tunnel
+   mode.  If the IP-Address header is not presented, the proxy is
+   implicitly requested to assign an IP address or IP address range and
+   provide this information to the client with the HTTP response.
 
    If the the client does not provide an IP address or IP address range
    is has to wait for the proxy response before any payload data can be
-   sent in tunnel mode.  If the request is denied by the proxy as sent
+   sent in tunnel mode.  If the request is denied by the proxy, any sent
    payload data will be discarded and a new CONNECT-IP request has to be
    sent.
 
-   The header is also used as a response header to indicate the actual
-   IP address or range that will be used.
+   The header is also used as a response header from the proxy to the
+   client to indicate the actual IP address or IP address range that
+   should be used by the client in tunnel mode or will be used by the
+   proxy in flow forwadring mode.
 
      IP-Address = sf-string
 
@@ -509,9 +541,9 @@ Table of Contents
    This document further defines a new header field to be used with
    CONNECT-IP "Conn-ID".  The Conn-ID HTTP header field indicates the
    value, offset, and length of a field in the IP payload that can be
-   used by the MASQUE as a connection identifier in addition to the IP
+   used by the proxy as a connection identifier in addition to the IP
    address and protocol tuple when multiple connections are proxied to
-   the same target server for incoming traffic on the external address.
+   the same target server for incoming traffic on the service address.
 
    Conn-ID is a Item Structured Header [RFC8941].  Its value MUST be a
    Byte Sequence.  Its ABNF is:
@@ -552,7 +584,7 @@ Table of Contents
    In tunnel mode, the CONNECT-IP request MUST contain the IP-Version
    header to indicate if IPv4 or IPv6 is used for the IP packet in the
    tunnel payload.  Further, the request MAY contain an IP-Address
-   header to request use of an IP addres or IP address range.
+   header to request use of an IP address or IP address range.
 
 5.  MASQUE server behavior
 
@@ -577,7 +609,7 @@ Table of Contents
    for flow forwarding mode is further discussed below in Section 5.2.
    For Tunnel Mode, the proxy determine if the proposed IP address per
    IP-Version and IP-Address headers is possible to use if included,
-   else selects a otherwise unusued address from its pool.  For tunnel
+   else selects a otherwise unused address from its pool.  For tunnel
    mode the IP selector for incoming traffic for this HTTP Connection
    and Stream ID is simply the IP destination address.
 
@@ -612,8 +644,8 @@ Table of Contents
 
    If no additional information about a payload field that can be used
    as an identifier based on Conn-ID header is provided by the client,
-   the masque server uses the source/destination address and protocol ID
-   3-tuple in order to map an incoming IP packet to an active forwarding
+   the proxy uses the source/destination address and protocol ID 3-tuple
+   in order to map an incoming IP packet to an active forwarding
    connection.  The proxy MUST also consider if IP-Address-Handling
    header Section 3.4 is included and its value.  If the IP-Address-
    Handling header is not included and the there has been prior request
@@ -630,15 +662,15 @@ Table of Contents
    unique addresses unless a large fraction of the pool has been
    exhausted.
 
-   If the Conn-ID header is provided, the MASQUE server should use that
-   field as an connection identifier together with protocol ID, source
-   and destination address, as a 4-tuple.  In this case it is
-   recommended to use a stable IP address for each client, while the
-   same IP address might still be used for multiple clients, if not
-   indicated differently by the client in the configuration file.  Note
-   that if the same IP address is used for multiple clients, this can
-   still lead to an identifier collision and the IP-CONNECT request MUST
-   be reject if such a collision is detect.
+   If the Conn-ID header is provided, the proxy should use that field as
+   an connection identifier together with protocol ID, source and
+   destination address, as a 4-tuple.  In this case it is recommended to
+   use a stable IP address for each client, while the same IP address
+   might still be used for multiple clients, if not indicated
+   differently by the client in the configuration file.  Note that if
+   the same IP address is used for multiple clients, this can still lead
+   to an identifier collision and the IP-CONNECT request MUST be reject
+   if such a collision is detect.
 
    Note: Are we allowing multiple client's to share the same 3-tuple
    when using Conn-ID?  It might be good for privacy reasons however, it
@@ -653,10 +685,10 @@ Table of Contents
    is set based on the information provided by the IP-Protocol header in
    the CONNECT-IP request.
 
-   MASQUE server MUST set the Don't Fragment (DF) flag in the IPv4
-   header.  Payload that does not fit into one IP packet MUST be
-   dropped.  A dropping indication should be provided to the client.
-   Further the MASQUE server should provide MTU information.
+   The proxy MUST set the Don't Fragment (DF) flag in the IPv4 header.
+   Payload that does not fit into one IP packet MUST be dropped.  A
+   dropping indication should be provided to the client.  Further the
+   proxy should provide MTU information.
 
    The ECN field is by default set to non-ECN capable transport (non-
    ECT).  Further ECN handling is described in Section Section 6.1.
@@ -668,7 +700,7 @@ Table of Contents
 
    The proxy MUST verify that the extracted IP packet's source IP
    address matches any address associated with this CONNECTION-IP
-   request, i.e. the assgined address or IP range.  This is to prevent
+   request, i.e. the assigned address or IP range.  This is to prevent
    source address spoofing in tunnel mode.
 
    Further the proxy should verify that the IP header length field
@@ -676,7 +708,7 @@ Table of Contents
 
 5.5.  Receiving an IP packet
 
-   When the MASQUE proxy receives an incoming IP packet on the external
+   When the proxy receives an incoming IP packet on the external
    interface(s), it checks the packet selectors to find the mappings
    that match the given packet.
 
@@ -697,7 +729,7 @@ Table of Contents
    If both datagram and stream based forwarding is supported, it is
    recommended for the proxy to use the same encapsulation as most
    recently used by the client or datagrams as default.  Further
-   considerations might be needed heree.
+   considerations might be needed here.
 
 6.  Additional signalling
 
@@ -713,19 +745,55 @@ Table of Contents
    to signal congestion notifications to the other end and react
    accordingly if a congestion notification is received.
 
-   Therefore, if ECN is used, the proxy needs to inform the client of a
-   congestion notification (IP CE codepoint) was observed in any IP
-   header of a received packet from the target server.
+   The probing and verification in the upper layer protocol of end-to-
+   end ECN requires per packet control over what value is set on IP
+   packet transmission as well as which of all values are received by
+   the proxy.  The QUIC specification is providing one such example in
+   Section 13.4 of [RFC9000].  Thus in flow forwarding mode the proxy
+   needs to be able to set and read the ECN values in sent and received
+   IP packets respecitively.  This may motivate that this functionality
+   is optional to implement, even if supporting CONNECT-IP
+   implementations in general will need to handle IP packets and their
+   fields with fine grained control.  If optional some negotiation
+   mechanism is needed.
 
-   Possible realizations are: a) always have two bits before payload in
-   flow forwarding model or use 4 different context IDs.  This is work
-   in process and will be further specified in a future version of this
-   document.
+   Possible realizations are:
+
+   a) always have two bits before payload in flow forwarding model, e.g.
+   by including the whole TOS byte, which would also enable DSCP setting
+   and reading.
+
+   b) use 4 different context IDs depending on what ECN field value was
+   received or should be set.
+
+   This is work in process and will be further specified in a future
+   version of this document.
 
 6.2.  ICMP handling
 
    ICMP messages are directly forwarded in tunneling mode.  In flow
-   forwarding mode Context IDs can be used to forward if requested.
+   forwarding mode a ICMP datagram format (Section 2.2.4) is used to
+   send the information from some ICMP message to the client.
+
+   The proxy upon receiving an ICMP message with a destination of an IP
+   address it performs flow forwarding on it needs to process the ICMP
+   message.  First it should validate that the ICMP message and find if
+   it matches any of its IP flow selectors (including Conn-ID).  In case
+   there are multiple matching use the IP selector with the most number
+   of field that matches fully.
+
+   Some messages may be applicable both to the proxy and the client.
+   For example an verified ICMPv6 Packet Too Big is applicable both to
+   the proxy and the client.  Others like ICMPv6 Destiantion Unreachable
+   (Type=1), Code=3 (Address unreachable) and Code=4 (Port unreachable)
+   is only possible to act on by the client.
+
+   QUESTION: Which ICMP messages should be suppressed by the proxy?
+
+   If a matching IP selector was chosen, then lookup the mapping for the
+   HTTP connection and Stream ID which this message should be sent to.
+   Encapsulate the recevied ICMP message in the ICMP datagram format and
+   send it to the client.
 
 6.3.  MTU considerations
 
@@ -830,6 +898,10 @@ Normative References
               DOI 10.17487/RFC0791, September 1981,
               <https://datatracker.ietf.org/doc/html/rfc791>.
 
+   [RFC0792]  Postel, J., "Internet Control Message Protocol", STD 5,
+              RFC 792, DOI 10.17487/RFC0792, September 1981,
+              <https://datatracker.ietf.org/doc/html/rfc792>.
+
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
               DOI 10.17487/RFC2119, March 1997,
@@ -839,6 +911,12 @@ Normative References
               of Explicit Congestion Notification (ECN) to IP",
               RFC 3168, DOI 10.17487/RFC3168, September 2001,
               <https://datatracker.ietf.org/doc/html/rfc3168>.
+
+   [RFC4443]  Conta, A., Deering, S., and M. Gupta, Ed., "Internet
+              Control Message Protocol (ICMPv6) for the Internet
+              Protocol Version 6 (IPv6) Specification", STD 89,
+              RFC 4443, DOI 10.17487/RFC4443, March 2006,
+              <https://datatracker.ietf.org/doc/html/rfc4443>.
 
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
@@ -853,7 +931,20 @@ Normative References
               HTTP", RFC 8941, DOI 10.17487/RFC8941, February 2021,
               <https://datatracker.ietf.org/doc/html/rfc8941>.
 
+   [RFC9000]  Iyengar, J., Ed. and M. Thomson, Ed., "QUIC: A UDP-Based
+              Multiplexed and Secure Transport", RFC 9000,
+              DOI 10.17487/RFC9000, May 2021,
+              <https://datatracker.ietf.org/doc/html/rfc9000>.
+
 Informative References
+
+   [I-D.ietf-masque-ip-proxy-reqs]
+              Chernyakhovsky, A., McCall, D., and D. Schinazi,
+              "Requirements for a MASQUE Protocol to Proxy IP Traffic",
+              Work in Progress, Internet-Draft, draft-ietf-masque-ip-
+              proxy-reqs-02, 30 April 2021,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-masque-
+              ip-proxy-reqs-02>.
 
    [I-D.westerlund-masque-transport-issues]
               Westerlund, M., Ihlar, M., Sarker, Z., and M. Kuehlewind,
@@ -863,21 +954,11 @@ Informative References
               <https://datatracker.ietf.org/doc/html/draft-westerlund-
               masque-transport-issues-01>.
 
-   [RFC0792]  Postel, J., "Internet Control Message Protocol", STD 5,
-              RFC 792, DOI 10.17487/RFC0792, September 1981,
-              <https://datatracker.ietf.org/doc/html/rfc792>.
-
    [RFC2474]  Nichols, K., Blake, S., Baker, F., and D. Black,
               "Definition of the Differentiated Services Field (DS
               Field) in the IPv4 and IPv6 Headers", RFC 2474,
               DOI 10.17487/RFC2474, December 1998,
               <https://datatracker.ietf.org/doc/html/rfc2474>.
-
-   [RFC4443]  Conta, A., Deering, S., and M. Gupta, Ed., "Internet
-              Control Message Protocol (ICMPv6) for the Internet
-              Protocol Version 6 (IPv6) Specification", STD 89,
-              RFC 4443, DOI 10.17487/RFC4443, March 2006,
-              <https://datatracker.ietf.org/doc/html/rfc4443>.
 
 Authors' Addresses
 
