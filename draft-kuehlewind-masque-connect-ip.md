@@ -93,24 +93,32 @@ peer.
 ## Tunnel mode
 
 In the tunnel mode the client requests to tunnel the IP packets to and from
-to one or more servers via the proxy. The Connect-IP request to the proxy establishes such a tunnel and
-optionally indicates
-the IP address or IP address range that will be allowed to be forwarded to the client. 
+to one or more servers via the proxy. The Connect-IP request to the proxy
+establishes such a tunnel and optionally indicates the IP address or IP
+address range that will be allowed to be forwarded to the client. 
 
 The tunnel mode is indicated by the ":authority" pseudo-header field
 of the CONNECT-IP request contain the host and listing port of the
 proxy itself. In this mode the proxy just blindly forwards all payload
 on its external interface without any modification and also forwards
 all incoming traffic to registered clients as payload within the
-respective tunneling association. However, a proxy MUST offer this
+respective tunneling association. That means all incoming traffic, where
+the destination address matches an by the cliented indicated IP address
+or range of IP addresses, is forwarded to the client over the tunnel association,
+except a more specific flow fowarding assocaiation exists where both 
+destination and source IP address as well as any additionally used
+identifier match (see section {{receiving}}.
+
+However, a proxy MUST offer this
 service only for known clients and clients MUST be authenticated
 during connection establishment. The proxy SHOULD inspect the source
 IP address of the IP packet in the tunnel payload and only forward if
 the IP address matches a set of lent client IP
 address. Optionally, a proxy also MAY offer this service only for a
 limited set of target addresses. In such a case the proxy SHOULD also
-inspect the destination IP address and reject packets with unknown
-destination address with an error message.
+inspect the destination IP address of the tunnel payload as well as
+the sourcse addrress of incoming packets from target servers and
+reject packets with unknown addresses with an error.
 
 ## Flow Forwarding mode
 
@@ -126,7 +134,8 @@ an active mapping has previously been created based on an IP-CONNECT
 request. Clients that need to support reception of flows established
 by external peer need to use tunnel mode.
 
-This mode covers the point-to-point use case {{==== Ref to the requirement doc ====}} and allows for flow-based
+This mode covers the point-to-point use case
+{{I-D.ietf-masque-ip-proxy-reqs}} and allows for flow-based
 optimizations and a larger effective maximum packet size. The target
 IP address is provided by the client as part of the CONNECT-IP
 request. The sources address is either independently selected by the
