@@ -700,7 +700,7 @@ it should only be used if the endpoints are also capable and willing
 to signal congestion notifications to the other end and react
 accordingly if a congestion notification is received.
 
-The probing and verification in the ULP of end-to-end ECN requires per
+The probing and verification in the upper layer protocol of end-to-end ECN requires per
 packet control over what value is set on IP packet transmission as
 well as which of all values are received by the proxy. The QUIC
 specification is providing one such example in Section 13.4 of
