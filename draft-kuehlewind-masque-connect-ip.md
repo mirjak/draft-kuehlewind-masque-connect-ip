@@ -108,7 +108,7 @@ the destination address matches an by the client indicated IP address
 or range of IP addresses, is forwarded to the client over the tunnel association,
 except a more specific flow forwarding association exists where both 
 destination and source IP address as well as any additionally used
-identifier match (see section {{receiving}}.
+identifier match (see section {{receiving}}).
 
 However, a proxy MUST offer this
 service only for known clients and clients MUST be authenticated
