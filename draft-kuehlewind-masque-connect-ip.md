@@ -105,21 +105,20 @@ on its external interface without any modification and also forwards
 all incoming traffic to registered clients as payload within the
 respective tunnel association. That means all incoming traffic, where
 the destination address matches an by the client indicated IP address
-or range of IP addresses, is forwarded to the client over the tunnel association,
-except a more specific flow forwarding association exists where both 
-destination and source IP address as well as any additionally used
-identifier match (see section {{receiving}}).
+or range of IP addresses, is forwarded to the client over the tunnel
+association, except a more specific flow forwarding association exists
+where both destination and source IP address as well as any
+additionally used identifier match (see section {{receiving}}).
 
-However, a proxy MUST offer this
-service only for known clients and clients MUST be authenticated
-during connection establishment. The proxy SHOULD inspect the source
-IP address of the IP packet in the tunnel payload and only forward if
-the IP address matches a set of lent client IP
-address. Optionally, a proxy also MAY offer this service only for a
-limited set of target addresses. In such a case the proxy SHOULD also
-inspect the destination IP address of the tunnel payload as well as
-the sourcse addrress of incoming packets from target servers and
-reject packets with unknown addresses with an error.
+However, a proxy MUST offer this service only for known clients and
+clients MUST be authenticated during connection establishment. The
+proxy SHOULD inspect the source IP address of the IP packet in the
+tunnel payload and only forward if the IP address matches the set of
+client IP addresses. Optionally, a proxy also MAY offer this service
+only for a limited set of target addresses. In such a case the proxy
+SHOULD also inspect the destination IP address of the tunnel payload
+as well as the source address of incoming packets from target
+servers and reject packets with unknown addresses with an error.
 
 ## Flow Forwarding mode
 
@@ -137,14 +136,14 @@ by external peer need to use tunnel mode.
 
 This mode covers the point-to-point use case
 {{?I-D.ietf-masque-ip-proxy-reqs}} and allows for flow-based
-optimizations and a larger effective maximum packet size. The target
-IP address is provided by the client as part of the CONNECT-IP
-request. The sources address is either independently selected by the
-proxy or can be requested to be either the same as used in a previous
-and currently active CONNECT-IP request or different from currently
-requests by the same client. The client also indicates the upper layer
-protocol, thus defining the three tuple used as primary selector for
-the flow.
+optimizations and a larger effective maximum packet size through the
+tunnel. The target IP address is provided by the client as part of the
+CONNECT-IP request. The sources address is either independently
+selected by the proxy or can be requested to be either the same as
+used in a previous and currently active CONNECT-IP request or
+different from currently requests by the same client. The client also
+indicates the upper layer protocol, thus defining the three tuple used
+as primary selector for the flow.
 
 In this mode the payload between the client and proxy does not contain
 the IP header in order to reduce overhead. Any additional information
@@ -345,9 +344,9 @@ A Forwarded IP packet can be either an encapsulated HTTP datagram on
 the same HTTP stream as the CONNECT-IP request, or as a HTTP datagram
 sent over QUIC datagram.
 
-## Data encapsualtion {#encap}
+## Data encapsulation {#encap}
 
-Once the CONNECT-IP method has completed, only CAPSUlE
+Once the CONNECT-IP method has completed, only CAPSULE
 {{!I-D.ietf-masque-h3-datagram}} frames are permitted to be sent on
 that stream.  Extension frames MAY be used if specifically permitted
 by the definition of the extension.  Receipt of any other known frame
@@ -416,9 +415,9 @@ header. Used for Flow Forwarding mode.
 This datagram contains a summary message of the ICMP message received
 and validated for the respective IP flow. The message format carries
 the ICMP packet for ICMPv4 {{RFC0792}} or ICMPv6 {{RFC4443}}. This
-format is chosen for forward compatibilty. From an implementation
+format is chosen for forward compatibility. From an implementation
 perspective the client don't need to verify the checksum or validate
-the header fields becasue that is done by the server. However, some
+the header fields because that is done by the server. However, some
 type codes, like IMCPv4 type 2, (Packet Too Big) carries an MTU field
 that the implementation want to read beyond understanding the meaning
 of the type and code combination.
@@ -666,7 +665,7 @@ indication should be provided to the client. Further the proxy should provide MT
 The ECN field is by default set to non-ECN capable transport (non-ECT).
 Further ECN handling is described in Section {{ECN}}.
 
-## Decapsulating tunnel mode IP Packets {#tunnel-decapsulation}
+## Decapsulation of tunnel mode IP Packets {#tunnel-decapsulation}
 
 On receiving an HTTP Datagram containing any of the tunnel mode
 formats for IPv4 or IPv6 the proxy extracts the full IP packet.
@@ -723,7 +722,7 @@ well as which of all values are received by the proxy. The QUIC
 specification is providing one such example in Section 13.4 of
 {{RFC9000}}. Thus in flow forwarding mode the proxy needs to be able
 to set and read the ECN values in sent and received IP packets
-respecitively. This may motivate that this functionality is optional
+respectively. This may motivate that this functionality is optional
 to implement, even if supporting CONNECT-IP implementations in general
 will need to handle IP packets and their fields with fine grained
 control. If optional some negotiation mechanism is needed. 
@@ -731,8 +730,8 @@ control. If optional some negotiation mechanism is needed.
 Possible realizations are:
 
   a) always have two bits before payload in flow forwarding model,
-  e.g. by including the whole TOS byte, which would also enable DSCP
-  setting and reading.
+  e.g. by including the whole Type of Service (TOS) byte, which would
+  also enable DSCP setting and reading.
 
   b) use 4 different context IDs depending on what ECN field value was
   received or should be set.
@@ -756,7 +755,7 @@ of field that matches fully.
 
 Some messages may be applicable both to the proxy and the client. For
 example an verified ICMPv6 Packet Too Big is applicable both to the
-proxy and the client. Others like ICMPv6 Destiantion Unreachable
+proxy and the client. Others like ICMPv6 Destination Unreachable
 (Type=1), Code=3 (Address unreachable) and Code=4 (Port unreachable)
 is only possible to act on by the client.
 
@@ -764,7 +763,7 @@ QUESTION: Which ICMP messages should be suppressed by the proxy?
 
 If a matching IP selector was chosen, then lookup the mapping for the
 HTTP connection and Stream ID which this message should be sent
-to. Encapsulate the recevied ICMP message in the ICMP datagram format
+to. Encapsulate the received ICMP message in the ICMP datagram format
 and send it to the client.
 
 ## MTU considerations {#MTU}
@@ -772,7 +771,7 @@ and send it to the client.
 The use of QUIC as a encapsulation between the client and proxy introduces
 additional overhead. If datagrams are used to encapsulate packets between
 the proxy and client, the end-to-end packets must fit within one datagram
-but the size of the datragrams is limited by the tunneling encapsulation
+but the size of the datagrams is limited by the tunneling encapsulation
 overhead.
 
 In forwarding mode the client is usually also the tunnel endpoint that
@@ -781,10 +780,10 @@ the packets on the end-to-end connection accordingly. However, the target
 endpoint is usually not aware of the tunnel overhead. Additional signalling
 on the end-to-end connection from the client to the target endpoint might
 be needed to restrict the packet size. If QUIC is also used as end-to-end
-protocol, this could be realised by the transport parameter. In additional,
+protocol, this could be realized by the transport parameter. In additional,
 signal from the proxy to the client could be provided as an extension to
 indicate the tunnel overhand more accurately and flexibly over time. Such
-signalling might the realised on the HTTP layer in order to take any
+signalling might the realized on the HTTP layer in order to take any
 additional limitations by HTTP intermediates into account.
 
 If the proxy receives an incoming packet from a target endpoint that is
