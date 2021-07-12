@@ -65,7 +65,7 @@ informative:
 This draft specifies a new HTTP method CONNECT-IP to proxy IP
 traffic. CONNECT-IP uses HTTP/3 Datagrams to use QUIC Datagrams for
 efficient transport of proxied IP packets, with the
-possibility to fallback to HTTP/3 over relibale QUIC streams, or even
+possibility to fallback to HTTP/3 over reliable QUIC streams, or even
 HTTP 1.x and 2.
 
 CONNECT-IP supports two modes: a tunneling mode where IP packets are
