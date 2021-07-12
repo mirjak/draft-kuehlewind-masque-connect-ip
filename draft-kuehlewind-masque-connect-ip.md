@@ -103,10 +103,10 @@ of the CONNECT-IP request contain the host and listing port of the
 proxy itself. In this mode the proxy just blindly forwards all payload
 on its external interface without any modification and also forwards
 all incoming traffic to registered clients as payload within the
-respective tunneling association. That means all incoming traffic, where
-the destination address matches an by the cliented indicated IP address
+respective tunnel association. That means all incoming traffic, where
+the destination address matches an by the client indicated IP address
 or range of IP addresses, is forwarded to the client over the tunnel association,
-except a more specific flow fowarding assocaiation exists where both 
+except a more specific flow forwarding association exists where both 
 destination and source IP address as well as any additionally used
 identifier match (see section {{receiving}}.
 
@@ -458,7 +458,7 @@ IP address for compliance.
 
 ## IP-Address header for CONNECT-IP {#IP-Address}
 
-IP-Address is a Item Structured Header {{RFC8941}}.  Its value MUST be
+IP-Address is an Item Structured Header {{RFC8941}}.  Its value MUST be
 an String contain an IP address or IP address range of the same IP
 version as indicated in the IP-Version header. The address must be
 specified in the format specified by TBD.
@@ -479,7 +479,7 @@ sent.
 The header is also used as a response header from the proxy to the
 client to indicate the actual IP address or IP address range that
 should be used by the client in tunnel mode or will be used by the
-proxy in flow forwadring mode.
+proxy in flow forwarding mode.
 
 ~~~
   IP-Address = sf-string
