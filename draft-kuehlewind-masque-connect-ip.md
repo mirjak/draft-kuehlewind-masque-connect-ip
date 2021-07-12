@@ -346,7 +346,7 @@ sent over QUIC datagram.
 
 ## Data encapsualtion {#encap}
 
-Once the CONNECT-IP method has completed, only CAPSULATE
+Once the CONNECT-IP method has completed, only CAPSUlE
 {{!I-D.ietf-masque-h3-datagram}} frames are permitted to be sent on
 that stream.  Extension frames MAY be used if specifically permitted
 by the definition of the extension.  Receipt of any other known frame
@@ -360,7 +360,7 @@ given headers and parameters.
 Stream based forwarding provides in-order and reliable delivery but
 may introduce Head of Line (HoL) Blocking if independent messages are
 send over the same CONNECT-IP association. On streams payload data is
-encapsulated in the CAPSULATE Frame using the DATAGRAM capsule
+encapsulated in the CAPSULE Frame using the DATAGRAM capsule
 (type=0x02) {{!I-D.ietf-masque-h3-datagram}}.
 
 The client can, in addition to stream-based forwarding, request
@@ -386,7 +386,7 @@ application.
 
 ## Datagram Formats {#datagram-formats}
 
-This section defined the different datagram formats used by
+This section defines the different datagram formats used by
 Connect-IP. Even if only one format is currently used it is expected
 that for some usages future extension may require the flexibility to
 use multiple different formats for a given CONNECT-IP request. 
@@ -458,23 +458,27 @@ IP address for compliance.
 ## IP-Address header for CONNECT-IP {#IP-Address}
 
 IP-Address is a Item Structured Header {{RFC8941}}.  Its value MUST be
-an String contain an IP address or IP range of the same IP version as
-indicated in the IP-Version header. The address must be specified in
-the format specified by TBD.
+an String contain an IP address or IP address range of the same IP
+version as indicated in the IP-Version header. The address must be
+specified in the format specified by TBD.
 
 This header is used to request the use of a certain IP address or IP
-address range. If the IP-Address header is not presented, the proxy is
-implicitly requested to assign an IP address or IP address range and
-provide this information to the client with the HTTP response.
+address range by the client to be used as source IP address in tunnel
+mode. If the IP-Address
+header is not presented, the proxy is implicitly requested to assign
+an IP address or IP address range and provide this information to the
+client with the HTTP response.
 
 If the the client does not provide an IP address or IP address range
 is has to wait for the proxy response before any payload data can be
-sent in tunnel mode. If the request is denied by the proxy as sent
+sent in tunnel mode. If the request is denied by the proxy, any sent
 payload data will be discarded and a new CONNECT-IP request has to be
 sent.
 
-The header is also used as a response header to indicate the actual IP
-address or range that will be used.
+The header is also used as a response header from the proxy to the
+client to indicate the actual IP address or IP address range that
+should be used by the client in tunnel mode or will be used by the
+proxy in flow forwadring mode.
 
 ~~~
   IP-Address = sf-string
