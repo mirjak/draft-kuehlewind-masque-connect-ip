@@ -128,11 +128,11 @@ Table of Contents
 
 1.1.  Tunnel mode
 
-   In the tunnel mode the client requests to tunnel the IP packets to
-   and from to one or more servers via the proxy.  The Connect-IP
-   request to the proxy establishes such a tunnel and optionally
-   indicates the IP address or IP address range that will be allowed to
-   be forwarded to the client.
+   In tunnel mode the client requests to tunnel IP packets to and from
+   one or more servers via the proxy.  The Connect-IP request to the
+   proxy establishes such a tunnel and optionally indicates the IP
+   address or IP address range that will be allowed to be used by and
+   forwarded to the client.
 
    The tunnel mode is indicated by the ":authority" pseudo-header field
    of the CONNECT-IP request contain the host and listing port of the
