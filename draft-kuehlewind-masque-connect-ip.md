@@ -778,8 +778,8 @@ overhead.
 In forwarding mode the client is usually also the tunnel endpoint that
 knows about the tunnel overhead and can therefore restrict the size of
 the packets on the end-to-end connection accordingly. However, the target
-server is usually not aware of the tunnel overhead. Additional signalling
-on the end-to-end connection from the client to the target server might
+endpoint is usually not aware of the tunnel overhead. Additional signalling
+on the end-to-end connection from the client to the target endpoint might
 be needed to restrict the packet size. If QUIC is also used as end-to-end
 protocol, this could be realised by the transport parameter. In additional,
 signal from the proxy to the client could be provided as an extension to
@@ -787,11 +787,12 @@ indicate the tunnel overhand more accurately and flexibly over time. Such
 signalling might the realised on the HTTP layer in order to take any
 additional limitations by HTTP intermediates into account.
 
-If the server receives an incoming packet from a target server that is
-too big to fit within a datagram on the tunnel connection, the server
-MAY eithher forwarding the packet encapsulated in the CAPSULE frames
-on the respective stream or, if IPv6 is used, it MAY reject the packet
-and send an ICMP Packet Too Big (PTB) message.
+If the proxy receives an incoming packet from a target endpoint that is
+too big to fit within a datagram on the tunnel connection, the proxy
+MAY either forward the packet encapsulated in the CAPSULE frames
+on the respective stream or, if IPv4 with DF bit set or IPv6 is used, the 
+proxy MAY reject the packet and send an ICMPv4 Packet type 3 code 4, 
+or ICMPv6 Too Big (PTB) message.
 
 # Examples
 
