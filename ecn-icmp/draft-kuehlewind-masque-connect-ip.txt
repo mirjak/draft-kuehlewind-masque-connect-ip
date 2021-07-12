@@ -5,9 +5,9 @@
 MASQUE                                                     M. Kuehlewind
 Internet-Draft                                             M. Westerlund
 Intended status: Standards Track                                M. Ihlar
-Expires: 9 January 2022                                        Z. Sarker
+Expires: 13 January 2022                                       Z. Sarker
                                                                 Ericsson
-                                                             8 July 2021
+                                                            12 July 2021
 
 
            The CONNECT-IP HTTP method for proxying IP traffic
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 9 January 2022.
+   This Internet-Draft will expire on 13 January 2022.
 
 Copyright Notice
 
@@ -438,9 +438,9 @@ Table of Contents
 2.2.4.  ICMP Message Format
 
    This datagram contains a summary message of the ICMP message received
-   and validated to relate to this IP flow.  The message format carries
+   and validated for the respective IP flow.  The message format carries
    the ICMP packet for ICMPv4 [RFC0792] or ICMPv6 [RFC4443].  This
-   format is chosen for forward compatibilty.  From a implementation
+   format is chosen for forward compatibilty.  From an implementation
    perspective the client don't need to verify the checksum or validate
    the header fields becasue that is done by the server.  However, some
    type codes, like IMCPv4 type 2, (Packet Too Big) carries an MTU field
